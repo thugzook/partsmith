@@ -1,0 +1,20 @@
+# Generated artifacts (STL, previews, specs, logs)
+outputs/
+
+# Python virtual environment
+.venv/
+
+# Python bytecode caches
+__pycache__/
+*.py[cod]
+*$py.class
+
+# macOS
+.DS_Store
+
+# Environment / secrets
+.env
+*.env
+
+# Local Claude Code settings (machine-specific permission allowlist)
+.claude/settings.local.json

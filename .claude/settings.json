@@ -1,0 +1,18 @@
+{
+  "permissions": {
+    "allow": [
+      "Write(/Users/noahchong/Documents/3d-print-agent/outputs/*)",
+      "Write(/Users/noahchong/Documents/3d-print-agent/.claude/*)",
+      "Write(/Users/noahchong/Documents/3d-print-agent/preview.py)",
+      "Bash(python3 *)",
+      "Bash(.venv/bin/python3 *)",
+      "Bash(.venv/bin/pip *)",
+      "Bash(cat *)",
+      "Bash(ls *)",
+      "Bash(mkdir *)",
+      "Bash(mv *)",
+      "Bash(find *)",
+      "Bash(grep *)"
+    ]
+  }
+}
