@@ -1,5 +1,7 @@
-# Generated artifacts (STL, previews, specs, logs)
-outputs/
+# Generated artifacts (STL, previews, specs) — keep cross-session learnings
+outputs/*
+!outputs/design_lessons.json
+!outputs/session_log.json
 
 # Python virtual environment
 .venv/

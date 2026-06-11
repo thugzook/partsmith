@@ -1,0 +1,585 @@
+[
+  {
+    "timestamp": "2026-06-04T02:23:55.031164+00:00",
+    "object": "dog water bowl",
+    "material": "PETG",
+    "printer": "standard FDM (0.4mm nozzle)",
+    "dimensions_known": {
+      "outer_diameter_mm": 150.0,
+      "bowl_height_mm": 65.0,
+      "wall_thickness_mm": 3.0,
+      "floor_thickness_mm": 3.0,
+      "base_chamfer_mm": 1.5
+    },
+    "stl": "outputs/dog_water_bowl/v1/dog_water_bowl.stl",
+    "watertight": true,
+    "verdict": "APPROVED",
+    "print_settings": {
+      "material": "PETG",
+      "layer_height": "0.2mm",
+      "walls": "3",
+      "infill": "15% gyroid",
+      "supports": "no \u2014 straight cylindrical walls, no overhangs",
+      "orientation": "flat bottom face on print bed (upright)"
+    },
+    "key_decisions": [
+      "Used boolean subtraction (outer minus inner cylinder) instead of shell() \u2014 more reliable for a simple cylindrical form and avoids OCC shell fragility.",
+      "Wall thickness set to 3mm (above 1.2mm minimum) because water bowls are handled daily and need to resist flex, drops, and dishwasher cycles.",
+      "Floor thickness 3mm matches wall thickness for a uniform cross-section, reducing differential shrinkage and warping in PETG.",
+      "Chamfer on bottom outer edge (1.5mm) instead of fillet \u2014 avoids elephant foot without requiring supports, keeps the base flat for bed adhesion.",
+      "Dimensions sourced from published small-dog bowl products (150mm diameter, 65mm height) to match real-world scale for a toy/small breed."
+    ],
+    "preview": "outputs/dog_water_bowl/v1/dog_water_bowl_preview.png"
+  },
+  {
+    "timestamp": "2026-06-04T02:55:30.846081+00:00",
+    "object": "dog water bowl",
+    "slug": "dog_water_bowl",
+    "version": "v2",
+    "material": "PETG",
+    "printer": "standard FDM (0.4mm nozzle)",
+    "dimensions_known": {
+      "base_r_mm": 52,
+      "top_r_mm": 77,
+      "bowl_h_mm": 62,
+      "foot_r_mm": 60,
+      "foot_h_mm": 7,
+      "wall_t_mm": 3.0,
+      "floor_t_mm": 3.5
+    },
+    "stl": "outputs/dog_water_bowl/v2/dog_water_bowl.stl",
+    "preview": "outputs/dog_water_bowl/v2/dog_water_bowl_preview.png",
+    "watertight": true,
+    "verdict": "APPROVED",
+    "print_settings": {
+      "material": "PETG",
+      "layer_height": "0.2mm",
+      "walls": "4+",
+      "infill": "20% gyroid",
+      "supports": "none \u2014 vertical walls only",
+      "orientation": "flat foot on bed (upright)"
+    },
+    "key_decisions": [
+      "Tapered frustum (cone) shape: base 104mm dia, top 154mm dia \u2014 gives elegant chalice silhouette and matches user request for narrow base that lips upward.",
+      "Foot disc (120mm dia, 7mm tall) wider than bowl base (104mm): creates an 8mm visible ledge/lip at the base junction.",
+      "Dog bone raised emboss built as two cylinders + box on YZ plane, extruded radially in +X, penetrating 0.3mm into wall for solid boolean union \u2014 protrudes 1.5mm above surface.",
+      "Chamfer applied to outer frustum before boolean cut (not after): OCC chamfer fails on post-cut annular top ring edges with tapered walls."
+    ]
+  },
+  {
+    "timestamp": "2026-06-04T03:29:38.459367+00:00",
+    "object": "dog water bowl",
+    "slug": "dog_water_bowl",
+    "version": "v3",
+    "material": "PETG",
+    "printer": "standard FDM (0.4mm nozzle)",
+    "dimensions_known": {
+      "base_r_mm": 52,
+      "top_r_mm": 77,
+      "bowl_h_mm": 62,
+      "foot_r_mm": 60,
+      "foot_h_mm": 7,
+      "wall_t_mm": 3.0,
+      "bone_width_mm": 60,
+      "engrave_depth_mm": 1.5
+    },
+    "stl": "outputs/dog_water_bowl/v3/dog_water_bowl.stl",
+    "preview": "outputs/dog_water_bowl/v3/dog_water_bowl_preview.png",
+    "watertight": true,
+    "verdict": "APPROVED",
+    "print_settings": {
+      "material": "PETG",
+      "layer_height": "0.2mm",
+      "walls": "4+",
+      "infill": "20% gyroid",
+      "supports": "none",
+      "orientation": "flat foot on bed (upright)"
+    },
+    "key_decisions": [
+      "Bone contour re-extracted using skimage.measure.find_contours (marching squares) \u2014 replaces broken angle-sort method that produced 79 self-intersecting jumps on the non-convex bone waist.",
+      "Engraving (boolean subtract) chosen over raised emboss: no overhangs, self-supporting, cleaner print.",
+      "Bone sized 60mm wide \u00d7 24.8mm tall, 1.5mm deep \u2014 legible on a 154mm bowl while leaving 1.5mm of wall above the minimum 1.2mm threshold.",
+      "Image contour extraction workflow now documented: save reference image to assets/, run find_contours(), normalize, save polygon_json \u2014 no manual geometry."
+    ]
+  },
+  {
+    "timestamp": "2026-06-04T03:42:39.224738+00:00",
+    "object": "dog water bowl",
+    "slug": "dog_water_bowl",
+    "version": "v4",
+    "material": "PETG",
+    "printer": "standard FDM (0.4mm nozzle)",
+    "dimensions_known": {
+      "base_r_mm": 52,
+      "top_r_mm": 77,
+      "bowl_h_mm": 62,
+      "foot_r_mm": 60,
+      "foot_h_mm": 7,
+      "wall_t_mm": 3.0,
+      "floor_t_mm": 3.5,
+      "bone_width_mm": 70.6,
+      "bone_height_mm": 29.2,
+      "engrave_depth_mm": 1.5
+    },
+    "stl": "outputs/dog_water_bowl/v4/dog_water_bowl.stl",
+    "preview": "outputs/dog_water_bowl/v4/dog_water_bowl_preview.png",
+    "watertight": true,
+    "verdict": "APPROVED",
+    "print_settings": {
+      "material": "PETG",
+      "layer_height": "0.2mm",
+      "walls": "4+",
+      "infill": "20% gyroid",
+      "supports": "none \u2014 vertical walls only, bone pocket is horizontal",
+      "orientation": "flat foot on bed (upright)"
+    },
+    "key_decisions": [
+      "Moved bone engraving from exterior curved wall to interior flat floor \u2014 eliminates surface-projection math and distortion entirely.",
+      "Bone sized to 70% of inner diameter (70.6mm wide \u00d7 29.2mm tall, aspect ratio preserved from polygon) \u2014 fills floor visually without crowding the walls.",
+      "Pocket depth 1.5mm into 3.5mm floor \u2014 leaves 2.0mm of material, well above 1.2mm printability minimum."
+    ],
+    "lessons_learned": [
+      "Engraving a flat polygon onto a curved frustum wall via YZ-plane extrude creates a distortion artifact: only the narrow cross-section where the flat solid meets the curved surface is visible, producing a crescent/smile shape instead of the intended design. Fix: always place decorative engravings on flat planar surfaces (interior floor, flat rim) rather than curved exterior walls."
+    ]
+  },
+  {
+    "timestamp": "2026-06-04T11:44:13Z",
+    "object": "rounded corner box with lid",
+    "slug": "rounded_corner_box",
+    "version": "v1",
+    "material": "Marble PLA",
+    "printer": "Prusa MK4S",
+    "dimensions_known": {
+      "outer_l_mm": 80,
+      "outer_w_mm": 60,
+      "base_h_mm": 32,
+      "lid_h_mm": 8,
+      "wall_t_mm": 2,
+      "corner_r_mm": 5,
+      "tolerance_mm": 0.2,
+      "emboss_h_mm": 1,
+      "bone_scale": 0.45
+    },
+    "stl": "outputs/rounded_corner_box/v1/rounded_corner_box_base.stl",
+    "preview": "outputs/rounded_corner_box/v1/rounded_corner_box_base_preview.png",
+    "watertight": true,
+    "verdict": "APPROVED",
+    "print_settings": {
+      "material": "Marble PLA",
+      "layer_height": "0.2mm",
+      "walls": "2",
+      "infill": "15% gyroid",
+      "supports": "none",
+      "orientation": "Base: open side up. Lid: skirt-down on bed (bone emboss prints last, top quality) — no supports needed either way."
+    },
+    "key_decisions": [
+      "Lid built as two-piece union: top plate (same outer footprint, 2mm thick) + hollow skirt tube (skirt_outer = base_inner − 2×tolerance = 75.6×55.6mm, depth = lid_h − wall_t = 6mm). Skirt is boolean subtraction, not shell.",
+      "Skirt outer fillet capped at 1mm (below wall_t=2mm) to avoid thin-wall geometry at corners.",
+      "Lid plate overhang over skirt is 2.2mm/side — prints without supports.",
+      "Dog bone emboss reused from dog_water_bowl assets at scale 0.45 (45×18.6mm), raised 1mm proud on flat lid top.",
+      "Tolerance 0.2mm/side for PLA friction fit on Prusa MK4S."
+    ],
+    "lessons_learned": [
+      "Friction-fit lip / stackable peg pattern: skirt_outer = base_inner − 2×tolerance; skirt_depth = lid_h − wall_t. For stackable objects, add the same skirt geometry to the BOTTOM of each tier so it pegs into the open top of the tier below. Same tolerance and fillet values apply."
+    ]
+  }
+  ,{
+    "timestamp": "2026-06-04T13:00:00Z",
+    "object": "rounded corner box with lid",
+    "slug": "rounded_corner_box",
+    "version": "v2",
+    "material": "Marble PLA",
+    "printer": "Prusa MK4S",
+    "dimensions_known": {
+      "outer_l_mm": 80,
+      "outer_w_mm": 60,
+      "base_h_mm": 32,
+      "lid_h_mm": 8,
+      "wall_t_mm": 2,
+      "corner_r_mm": 5,
+      "tolerance_mm": 0.2,
+      "emboss_h_mm": 1,
+      "bone_scale": 0.45
+    },
+    "stl": "outputs/rounded_corner_box/v2/rounded_corner_box_base.stl",
+    "preview": "outputs/rounded_corner_box/v2/rounded_corner_box_base_preview.png",
+    "watertight": true,
+    "verdict": "APPROVED",
+    "print_settings": {
+      "material": "Marble PLA",
+      "layer_height": "0.2mm",
+      "walls": "2",
+      "infill": "15% gyroid",
+      "supports": "none",
+      "orientation": "Base: open side up. Lid: skirt-down on bed — no supports needed either way."
+    },
+    "key_decisions": [
+      "Fixed SKIRT_R from v1's conservative 1mm to correct formula SKIRT_R = INNER_R - TOLERANCE = 2.8mm — eliminates visible corner mismatch and interference between skirt and base cavity corners.",
+      "All other geometry unchanged from v1 — only the skirt corner fillet radius corrected."
+    ],
+    "lessons_learned": [
+      "Skirt fillet formula SKIRT_R = INNER_R - TOLERANCE (2.8mm) confirmed correct for friction fit. Conservative 1mm caused skirt corners to be visibly more rectangular than the base inner cavity, creating interference at corners."
+    ]
+  }
+  ,{
+    "timestamp": "2026-06-04T23:18:00Z",
+    "object": "dog food bowl riser",
+    "slug": "dog_food_bowl_riser",
+    "version": "v1",
+    "material": "PLA marble",
+    "printer": "Prusa MK4S",
+    "dimensions_known": {
+      "height_mm": 101.6,
+      "outer_diameter_mm": 114.3,
+      "wall_mm": 3.0,
+      "lip_height_mm": 8.0,
+      "lip_inset_mm": 8.0,
+      "lip_inner_diameter_mm": 92.3,
+      "main_bore_diameter_mm": 108.3,
+      "fit_clearance_mm": 1.0,
+      "chamfer_mm": 1.5
+    },
+    "stl": "outputs/dog_food_bowl_riser/v1/dog_food_bowl_riser.stl",
+    "preview": "outputs/dog_food_bowl_riser/v1/dog_food_bowl_riser_preview.png",
+    "watertight": true,
+    "verdict": "APPROVED",
+    "print_settings": {
+      "material": "PLA marble",
+      "layer_height": "0.2mm",
+      "walls": "3",
+      "infill": "15% gyroid",
+      "supports": "none — open cylinder, inner step faces upward",
+      "orientation": "flat bottom on bed, open top facing up"
+    },
+    "key_decisions": [
+      "Retaining lip formed by stepped inner bore: main bore 108.3mm ID (bottom 93.6mm), then lip bore 92.3mm ID (top 8mm) — creates an 8mm-wide annular shelf at Z=93.6mm that the bowl base rests on.",
+      "Fit clearance set to 1.0mm (generous) per user request to account for measurement error — lip opening 92.3mm accommodates bowl bases up to ~90mm.",
+      "Chamfer applied to outer bottom edge of the solid cylinder BEFORE boolean cuts — applying after cuts selects inner bore edges too and causes OCC failure.",
+      "Open top and bottom (no floor) — easy to clean, structurally sufficient as the 3mm walls carry all load."
+    ],
+    "lessons_learned": [
+      "Chamfer on bottom outer edge after stepped-bore boolean cuts fails with OCC error because the selector picks both outer and inner bottom edges. Fix: apply chamfer to the outer cylinder primitive before performing any boolean cuts."
+    ]
+  }
+  ,{
+    "timestamp": "2026-06-04T23:45:00Z",
+    "object": "dog food bowl riser",
+    "slug": "dog_food_bowl_riser",
+    "version": "v2",
+    "material": "PLA marble",
+    "printer": "Prusa MK4S",
+    "dimensions_known": {
+      "total_height_mm": 101.6,
+      "bowl_od_mm": 114.3,
+      "fit_clearance_mm": 2.35,
+      "socket_id_mm": 119.0,
+      "socket_od_mm": 127.0,
+      "socket_h_mm": 34.6,
+      "pedestal_od_mm": 88.0,
+      "pedestal_id_mm": 82.0,
+      "pedestal_h_mm": 42.0,
+      "transition_h_mm": 25.0,
+      "bottom_chamfer_mm": 1.5
+    },
+    "stl": "outputs/dog_food_bowl_riser/v2/dog_food_bowl_riser.stl",
+    "preview": "outputs/dog_food_bowl_riser/v2/dog_food_bowl_riser_preview.png",
+    "watertight": true,
+    "verdict": "APPROVED",
+    "print_settings": {
+      "material": "PLA marble",
+      "layer_height": "0.2mm",
+      "walls": "3",
+      "infill": "15% gyroid",
+      "supports": "none — transition slopes at 52 deg from horizontal",
+      "orientation": "flat bottom on bed, socket facing up"
+    },
+    "key_decisions": [
+      "Corrected design concept: bowl drops INTO a socket (v1 had wrong concept — internal shelf the bowl sat on top of). Socket walls wrap around the bowl exterior to retain it.",
+      "Three-section outer solid: pedestal cylinder (88mm OD) + tapered frustum transition + socket ring (127mm OD). Two-section loft used only for the frustum.",
+      "Transition frustum angle 52 deg from horizontal (pedestal 88mm → socket 127mm over 25mm height) — above 45 deg threshold, no supports needed.",
+      "Inner bores as two separate straight cylinders: pedestal bore (82mm ID, 0→67mm) + socket bore (119mm ID, 67→101.6mm). The annular shelf at Z=67mm supports the bowl.",
+      "Chamfer applied to pedestal primitive before union operations (v1 lesson preserved)."
+    ],
+    "lessons_learned": [
+      "Always confirm the physical interaction model before designing: 'does the item sit ON TOP, drop INTO, or clip ONTO?' Wrong concept cannot be fixed by tuning dimensions — it requires a full redesign.",
+      "User sketches are the authoritative spec and override text descriptions. Read the sketch for the interaction model first.",
+      "Always read intent_spec.json before asking clarifying questions — the bowl OD (114.3mm) was already recorded in the spec and should not have been re-asked during the redesign discussion."
+    ]
+  }
+  ,{
+    "timestamp": "2026-06-05T01:45:00Z",
+    "object": "iPhone 17 phone stand",
+    "slug": "iphone17_vertical_stand",
+    "version": "v1",
+    "material": "Marble PLA",
+    "printer": "Prusa MK4",
+    "dimensions_known": {
+      "phone_w_mm": 71.5,
+      "phone_h_mm": 149.6,
+      "phone_t_mm": 7.95,
+      "spine_w_mm": 79.0,
+      "spine_t_mm": 10.0,
+      "spine_len_mm": 105.0,
+      "tilt_deg": 15.0,
+      "base_w_mm": 79.0,
+      "base_depth_mm": 52.0,
+      "base_h_mm": 8.0,
+      "front_clearance_mm": 12.0,
+      "rear_clearance_mm": 30.0,
+      "magsafe_recess_dia_mm": 56.5,
+      "magsafe_recess_depth_mm": 6.2,
+      "magsafe_center_height_mm": 65.0,
+      "cable_slot_w_mm": 4.0,
+      "cable_slot_h_mm": 6.0
+    },
+    "stl": "outputs/iphone17_vertical_stand/v1/iphone17_vertical_stand.stl",
+    "preview": "outputs/iphone17_vertical_stand/v1/iphone17_vertical_stand_preview.png",
+    "watertight": true,
+    "verdict": "APPROVED",
+    "print_settings": {
+      "material": "Marble PLA",
+      "layer_height": "0.2mm",
+      "walls": "3",
+      "infill": "15% gyroid",
+      "supports": "none",
+      "orientation": "base flat on bed, spine standing upright"
+    },
+    "key_decisions": [
+      "Spine built as YZ cross-section extrusion (parallelogram) instead of box+rotate — eliminates watertight issues from spine-base gap that appear after rotation.",
+      "Spine embedded 2mm into base (starts at Z=base_h-2) for guaranteed volumetric overlap, ensuring clean boolean union.",
+      "MagSafe is a through-hole (56.5mm dia): puck inserted from rear, held by phone magnets. Recess approach failed — horizontal cylinder on tilted face only opens the upper half-circle; lower arc is a hidden internal void.",
+      "Cable slot (5mm wide) cuts straight through spine+base from puck-hole bottom, overlapping puck hole by 1mm to avoid tangent-edge OCC boolean failure.",
+      "front_clearance = 12mm (phone_t + case margin); rear_clearance = 30mm — phone CG ~19mm rearward from spine, stand is anti-tip stable."
+    ],
+    "lessons_learned": [
+      "Horizontal cylinder cut into a tilted face creates only a half-circle opening — the lower arc is a hidden internal void. Always use through-holes for charger cutouts on tilted panels.",
+      "Cable slot must overlap the puck hole by at least 1mm (not tangent) to avoid OCC boolean failure on the shared edge.",
+      "Cut cable slots from the combined base+spine result, not from the spine alone — the base union seals the embedded overlap region and closes any spine-only cuts."
+    ]
+  }
+  ,{
+    "timestamp": "2026-06-04T16:45:00Z",
+    "object": "dog food bowl riser",
+    "slug": "dog_food_bowl_riser",
+    "version": "v3",
+    "material": "PLA marble",
+    "printer": "Prusa MK4S",
+    "dimensions_known": {
+      "total_height_mm": 131.2,
+      "bowl_od_mm": 114.3,
+      "fit_clearance_mm": 2.35,
+      "socket_id_mm": 119.0,
+      "socket_od_mm": 127.0,
+      "socket_h_mm": 17.3,
+      "pedestal_od_mm": 88.0,
+      "pedestal_id_mm": 82.0,
+      "pedestal_wall_mm": 3.0,
+      "pedestal_h_mm": 68.9,
+      "flare_od_mm": 150.0,
+      "flare_h_mm": 20.0,
+      "transition_h_mm": 25.0,
+      "bottom_chamfer_mm": 1.5
+    },
+    "stl": "outputs/dog_food_bowl_riser/v3/dog_food_bowl_riser.stl",
+    "preview": "outputs/dog_food_bowl_riser/v3/dog_food_bowl_riser_preview.png",
+    "watertight": true,
+    "verdict": "APPROVED",
+    "print_settings": {
+      "material": "PLA marble",
+      "layer_height": "0.2mm",
+      "walls": "3",
+      "infill": "15% gyroid",
+      "supports": "none — flare self-supporting (narrows going up); transition at 52 deg",
+      "orientation": "flat flare base on bed, socket facing up"
+    },
+    "key_decisions": [
+      "Solid flared base: 150mm OD → 88mm OD over 20mm — ~70% more footprint than v2, mass concentrated at base lowers CoG.",
+      "Flare section kept solid (no hollow) — maximises base mass for stability, simplifies geometry.",
+      "Pedestal height reduced from 101.6mm to 68.9mm so total height decreases by exactly 0.5in (12.7mm) to 131.2mm.",
+      "Chamfer applied to flare primitive using faces('<Z').edges().chamfer() — same pattern as cylinder, works correctly on loft frustum bottom face."
+    ],
+    "lessons_learned": [
+      "Anti-tip flared base: solid frustum wider at bottom tapering to pedestal OD over 20mm provides ~70% more footprint, lowers CoG, adds no overhang risk. Keep flare solid, deduct flare height from pedestal height to control total model height."
+    ]
+  }
+  ,{
+    "timestamp": "2026-06-06T22:00:00Z",
+    "object": "desk backpack hook",
+    "slug": "desk_backpack_hook",
+    "version": "v1",
+    "material": "Marble PLA",
+    "printer": "Prusa MK4S",
+    "dimensions_known": {
+      "slot_height_mm": 31.75,
+      "slot_height_in": 1.25,
+      "lateral_mm": 25.4,
+      "lateral_in": 1.0,
+      "top_arm_len_mm": 50.8,
+      "top_arm_len_in": 2.0,
+      "lower_arm_len_mm": 63.5,
+      "lower_arm_len_in": 2.5,
+      "wall_t_mm": 8.0,
+      "mouth_wall_mm": 15.0,
+      "stop_h_mm": 15.0,
+      "fillet_r_mm": 3.0
+    },
+    "stl": "outputs/desk_backpack_hook/v1/desk_backpack_hook.stl",
+    "preview": "outputs/desk_backpack_hook/v1/desk_backpack_hook_preview.png",
+    "watertight": true,
+    "verdict": "APPROVED",
+    "print_settings": {
+      "material": "Marble PLA",
+      "layer_height": "0.2mm",
+      "walls": "3",
+      "infill": "30% gyroid",
+      "supports": "none",
+      "orientation": "flat on one 25.4mm (1in) Y-face; XZ profile stands vertical; add 5mm brim"
+    },
+    "key_decisions": [
+      "S/Z extruded profile: both top arm and lower arm extend in the same direction (toward desk interior), not opposite. This keeps the backpack weight pulling the hook into the desk edge rather than tipping it forward.",
+      "Stop tab at far end of lower arm: 15mm tall upturned retainer built into the 2D profile polygon — no separate union needed.",
+      "3mm fillets applied only to |Y edges (extrusion-direction edges) — avoids complex OCC fillet failures on post-union topology while still giving a soft rounded look.",
+      "Uniform 8mm wall thickness throughout for load-bearing integrity in PLA under backpack weight."
+    ],
+    "lessons_learned": [
+      "Gravity-lock desk hook: both arms must extend the same direction (toward desk interior) so backpack weight presses the hook INTO the desk edge — not away from it. Opposite arms create a tipping moment.",
+      "S/Z profile extruded from XZ workplane is the cleanest approach for complex 2D profiles — single solid body, clean topology, reliable filleting vs union-of-boxes."
+    ]
+  }
+  ,{
+    "timestamp": "2026-06-07T01:25:00Z",
+    "object": "desk backpack hook",
+    "slug": "desk_backpack_hook",
+    "version": "v3",
+    "material": "Marble PLA",
+    "printer": "Prusa MK4S",
+    "dimensions_known": {
+      "slot_height_mm": 31.75,
+      "slot_height_in": 1.25,
+      "lateral_mm": 25.4,
+      "lateral_in": 1.0,
+      "top_arm_len_mm": 50.8,
+      "top_arm_len_in": 2.0,
+      "mid_lip_len_mm": 50.8,
+      "cradle_len_mm": 63.5,
+      "cradle_len_in": 2.5,
+      "spine_drop_mm": 25.0,
+      "wall_t_mm": 6.0,
+      "stop_tab_h_mm": 10.0,
+      "fillet_r_mm": 2.0,
+      "bbox_mm": "63.5 x 25.4 x 74.75"
+    },
+    "stl": "outputs/desk_backpack_hook/v3/desk_backpack_hook.stl",
+    "preview": "outputs/desk_backpack_hook/v3/desk_backpack_hook_preview.png",
+    "watertight": true,
+    "verdict": "APPROVED",
+    "print_settings": {
+      "material": "Marble PLA",
+      "layer_height": "0.2mm",
+      "walls": "3 perimeters (6mm members print near-solid)",
+      "infill": "30% gyroid",
+      "supports": "none",
+      "orientation": "lay flat on one 25.4mm (1in) Y-face; the 己/Z profile stands vertical => 0% overhangs; add 5mm brim (tall, narrow footprint)"
+    },
+    "key_decisions": [
+      "Corrected the profile to a folded-ribbon 己/Z per the user's side-view sketch: the counterbalance TOP ARM extends backward (toward desk interior) while the CRADLE extends FORWARD (toward/past the desk edge) — OPPOSITE directions, spine on the interior (left) side. This supersedes v1/v2's 'both arms same direction' assumption.",
+      "Mid lip extended to the full top-arm length (50.8mm) so the desk is clamped over its full span — removes the cantilever that made v2/v3.0 look unstable.",
+      "Spine relocated to the interior (left) end; both grip arms run to the mouth wall, so the cradle (63.5mm) ends just 12.7mm past the mouth — 'a bit further' per the user.",
+      "Walls reduced 8->6mm uniform after a load check: the cradle is the only real load path and, printed on-side, its bending stress runs along the layers (not across them) -> SF ~1.4 for a normal bag at 6mm, ~27% less material.",
+      "Stop tab shortened 15->10mm; thickness kept = wall (6mm) for consistent thickness per user request.",
+      "Fillet reduced 3->2mm: a 3mm fillet overlaps on both parallel edges of a 6mm-wide face (OCC BRep failure).",
+      "Built as overlapping Y-extruded boxes (every fold overlaps its neighbour) -> verified ONE shell: Solids==1, watertight, Euler==2, mesh splits to 1 body."
+    ],
+    "lessons_learned": [
+      "A user's side-view sketch OVERRIDES prior text assumptions. The desk hook is a folded ribbon (己/Z): the load arm (cradle) extends FORWARD past the desk edge, OPPOSITE the counterbalance top arm — NOT the same direction claimed by v1's lesson. Verify fold direction against the sketch before coding.",
+      "'One continuous piece' failures come from members that only touch (share a face) instead of overlapping. Make every fold volumetrically overlap its neighbour and assert solids()==1 / watertight / Euler==2.",
+      "Max fillet radius on a member filleted on BOTH parallel edges of a face is just under half the face width: 3mm fails on a 6mm wall; use 2mm.",
+      "The standard overhang formula counts the flat bed face as a 90deg overhang. For a constant-section prism printed on its extrusion-axis face, real overhangs are 0 — verify by excluding bed-contact (y≈ymin) faces."
+    ]
+  }
+  ,{
+    "timestamp": "2026-06-07T12:36:00Z",
+    "object": "desk backpack hook",
+    "slug": "desk_backpack_hook",
+    "version": "v4",
+    "material": "Marble PLA",
+    "printer": "Prusa MK4S",
+    "dimensions_known": {
+      "slot_height_mm": 31.75,
+      "lateral_mm": 25.4,
+      "top_arm_len_mm": 50.8,
+      "mid_lip_len_mm": 50.8,
+      "cradle_len_mm": 63.5,
+      "spine_drop_mm": 25.0,
+      "wall_t_mm": 6.0,
+      "stop_tab_h_mm": 7.5,
+      "fillet_r_mm": 2.0,
+      "bbox_mm": "63.5 x 25.4 x 74.75"
+    },
+    "stl": "outputs/desk_backpack_hook/v4/desk_backpack_hook.stl",
+    "preview": "outputs/desk_backpack_hook/v4/desk_backpack_hook_preview.png",
+    "watertight": true,
+    "verdict": "APPROVED",
+    "print_settings": {
+      "material": "Marble PLA",
+      "layer_height": "0.2mm",
+      "walls": "3 perimeters (6mm members print near-solid)",
+      "infill": "30% gyroid",
+      "supports": "none",
+      "orientation": "lay flat on one 25.4mm Y-face; 己/Z profile stands vertical => 0% overhangs; add 5mm brim"
+    },
+    "key_decisions": [
+      "Minor refinement of v3: stop-tab height 10 -> 7.5mm (3/4) for a lower catch. All other geometry identical to v3; still one continuous shell (Solids==1, watertight)."
+    ],
+    "lessons_learned": [
+      "Tab height is independent of overall model height here — the tab top (z = wall_t + tab_h = 13.5mm) sits well below the top arm (74.75mm), so shrinking it does not change the bounding box."
+    ]
+  },
+  {
+    "timestamp": "2026-06-07T21:05:00Z",
+    "object": "Hollow 'club' / water-tower shaped vessel that houses a 25GA round DC gear motor",
+    "material": "PLA",
+    "printer": "Prusa MK4s (0.4mm nozzle)",
+    "dimensions_known": {
+      "head_diameter_mm": 76.2,
+      "head_semi_v_mm": 24.2,
+      "shaft_base_dia_mm": 33.0,
+      "shaft_top_dia_mm": 31.0,
+      "bore_dia_mm": 27.0,
+      "wall_mm": 2.0,
+      "overall_w_mm": 84.2,
+      "overall_h_mm": 125.7,
+      "bump_dia_mm": 16.0,
+      "n_equator_bumps": 8,
+      "motor_dia_mm": 25.0,
+      "motor_len_mm": 52.0,
+      "cap_dia_mm": 33.0
+    },
+    "slug": "club_motor_housing",
+    "version": "v1",
+    "stl": "outputs/club_motor_housing/v1/club_motor_housing.stl",
+    "preview": "outputs/club_motor_housing/v1/club_motor_housing_preview.png",
+    "watertight": true,
+    "verdict": "DELIVERED (proof of concept; formal design review skipped at user request)",
+    "print_settings": {
+      "material": "PLA",
+      "layer_height": "0.2mm",
+      "walls": "2 perimeters",
+      "infill": "15% gyroid",
+      "supports": "tree supports under the head underside overhang (user adds in PrusaSlicer); cap needs none",
+      "orientation": "body: open base flat on bed, head up; cap: flat side down"
+    },
+    "key_decisions": [
+      "Shaft widened from 1in (25.4mm) to 31-33mm so a 25mm-dia 25GA/25D motor fits inside (1in bore would have been ~21mm, too small).",
+      "Water-tower orientation: shaft is the base (open bottom), head on top and sealed. Motor inserts from the bottom and lives at the bottom of the shaft.",
+      "Separate base cap retains the motor (bolts to its 2x M3 face holes @ 17mm), provides drive-shaft exit (center) and wire pass-through (side); spigot press-fits into the 27mm bore with 0.4mm diametral clearance.",
+      "Body built as cone(shaft) UNION oblate-ellipsoid(head), junction filleted, then hollowed via boolean cut (shell() failed on this geometry)."
+    ],
+    "lessons_learned": [
+      "Bumps on a hollow shell: union the bump spheres to the SOLID body BEFORE hollowing, and seat each bump center INSIDE the cavity wall (a few mm), so the cavity cut passes through solid sphere meat instead of grazing the sphere edge tangentially (tangent cuts => degenerate slivers, non-watertight).",
+      "A bump sphere placed on a revolve's apex breaks watertightness because the sphere primitive's tessellation pole coincides with the revolve axis pole. Rotate the bump sphere 90deg (cq.Solid.makeSphere(r).rotate((0,0,0),(1,0,0),90)) to move its mesh pole off-axis; sink it slightly for a transversal merge.",
+      "shell() (BRep_API: command not done) and two-independent-spline outer/inner profiles (splines diverge and pinch the wall into multiple solids) both fail for a bulb-on-column. Reliable path: clean primitives -> union -> fillet junction -> boolean-cut a cavity built from matching primitives.",
+      "Fillet the cone/ellipsoid neck by selecting just the intersection circle with a BoxSelector at z = ellipsoid_center - ellipsoid_semi_v (where the cone side exits the ellipsoid surface)."
+    ]
+  }
+]
