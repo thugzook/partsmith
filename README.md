@@ -1,8 +1,10 @@
-# 🖨️ 3D Print Agent
+# 🔨 partsmith
 
 **Describe a physical object in plain English → get a printable, dimensionally-verified STL.**
 
-A conversational CAD pipeline built on [CadQuery](https://cadquery.readthedocs.io/). You talk through what you want; the agent gathers a spec, sources real-world dimensions, generates a parametric model, and — the part that makes it actually useful — **runs a numeric gate that catches functionally-wrong parts before they ever reach the printer.**
+*Conversational CAD that forges real parts — and verifies they actually fit before they print.*
+
+partsmith is a CAD pipeline built on [CadQuery](https://cadquery.readthedocs.io/). You talk through what you want; it gathers a spec, sources real-world dimensions, generates a parametric model, and — the part that makes it actually useful — **runs a numeric gate that catches functionally-wrong parts before they ever reach the printer.**
 
 ![A bowl riser with the bowl shown in place, and a green GATE PASS footer confirming the bowl bottom sits exactly 4 inches above the bed](docs/images/hero-bowl-riser-assembled.png)
 
