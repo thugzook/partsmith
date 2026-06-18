@@ -70,6 +70,9 @@ Object type, purpose, what it holds/protects/attaches to. Get a clear mental mod
 **Critical dimensions**
 Must-fit measurements, like PCB size, phone width, screw spacing, diameter of the thing it wraps around, etc. These are non-negotiable and drive everything else.
 
+**Critical measurements & datums (do this before any geometry)**
+Any measurement the user states with a vague reference — "4 inches above the ground", "X tall", "from the top", "high" — is ambiguous and must be pinned to an explicit **datum** before it goes in the spec: *from what point, to what point?* "Sits 4 inches above the ground" could mean the bowl's **bottom**, the **food surface**, or the **rim** — three different models. Ask; never guess. Record each as a `critical_measurement` (`name`, `from`, `to`, `value_mm`, `tolerance_mm`, `source`) and capture the `interaction_model` (`drops-in` / `sits-on` / `clips-on` / `screws-on` / `freestanding`). These names become the keys the model reports and `verify_spec.py` gates on, so choose them to match the variables you'll compute. State values in mm **and** inches.
+
 **Mounting & attachment**
 How does it connect to things? Screws (what size?), snap-fit, adhesive tape, magnets, freestanding on a desk? This affects wall thickness, boss placement, and overall structure.
 
@@ -90,11 +93,11 @@ Build the model in phases. At each phase, export an STL, render a preview, self-
 
 ### Preview recipe (use at every phase)
 
-**One-shot (run script + render + parse result as JSON):**
+**One-shot (run script + render + gate + parse result as JSON):**
 ```bash
-python3 run_cadquery_model.py model.py --preview --strict
+python3 run_cadquery_model.py model.py --preview --strict --spec intent_spec.json
 ```
-This executes `model.py`, finds the STL it wrote, renders the multi-view preview, and emits a JSON result with `success`, `stdout`, `stderr`, `stl`, `preview`, and `watertight`. With `--strict`, a non-watertight mesh is a hard failure. Use this as the default loop: if `success` is false, read the `stderr` field to fix the CadQuery script, then re-run.
+This executes `model.py`, finds the STL it wrote, renders the multi-view preview (mating part translucent + measurements footer), runs the numeric gate from `--spec`, and emits a JSON result with `success`, `stdout`, `stderr`, `stl`, `preview`, `watertight`, `measurements`, and `gate` (`gate.passed` + per-measurement PASS/FAIL). With `--strict`, a non-watertight mesh is a hard failure. Use this as the default loop: if `success` is false, read the `stderr` field to fix the script; if `gate.passed` is false, fix the geometry so the failing measurement hits its target. (`--spec` is optional — omit it for quick geometry-only iteration.)
 
 **Rendering only (when the STL already exists):**
 ```bash
@@ -173,6 +176,11 @@ ALWAYS structure scripts like this:
 
 ```python
 import cadquery as cq
+import os, sys
+# Make the shared helpers importable from outputs/<slug>/vN/model.py (root is 3 up).
+sys.path.insert(0, os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                                "..", "..", "..", "skills"))
+import mating_proxies as mp
 
 # ============================================================
 # PARAMETERS - Edit these to customize the model
@@ -203,10 +211,43 @@ result = (
 # ============================================================
 # Use tolerance=0.01, angularTolerance=0.1 for consistent tessellation
 # across models. Defaults give coarser, wildly variable STL sizes.
-cq.exporters.export(result, "output.stl",
-                    tolerance=0.01, angularTolerance=0.1)
-print(f"Exported: {width}x{depth}x{height}mm")
+STL = "output.stl"
+cq.exporters.export(result, STL, tolerance=0.01, angularTolerance=0.1)
+
+# ============================================================
+# VERIFICATION — assembled state + numeric gate (MANDATORY)
+# ============================================================
+# 1) Build a proxy of the mating part in its functional position and export it
+#    so the preview shows the ASSEMBLED state. (Skip the proxy only for truly
+#    freestanding objects with no mating part — still do steps 2 & 3.)
+bowl, _ = mp.bowl_proxy(base_od_mm=bowl_od, depth_mm=bowl_depth,
+                        rest_z_mm=socket_floor_z)
+mp.export_proxy(bowl, STL)          # writes output__proxy.stl (never printed)
+
+# 2) Compute every critical_measurement on the REAL geometry, not on assumptions.
+#    Use the SAME names as the spec's critical_measurements.
+bb = result.val().BoundingBox()
+mp.emit_measurements({
+    "bowl_rest_height": socket_floor_z,
+    "socket_clearance": mp.clearance(socket_id, bowl_od),
+    "bbox": [bb.xlen, bb.ylen, bb.zlen],
+})                                  # prints: MEASUREMENTS_JSON: {...}
+
+# 3) Print a quick self-check, but do NOT hard-abort on a mismatch — always let
+#    the build finish so the assembled preview renders even when a value is off
+#    (that picture is how you debug it). The authoritative gate is verify_spec.py
+#    in Step 4.
+ok = abs(socket_floor_z - 101.6) <= 3.0
+print(f"CHECK bowl_rest_height: {'PASS' if ok else 'FAIL'} "
+      f"({socket_floor_z:.1f} mm vs 101.6 +/- 3 mm)")
+print(f"Exported: {bb.xlen:.0f}x{bb.ylen:.0f}x{bb.zlen:.0f}mm")
 ```
+
+The VERIFICATION block is what turns "looks right" into "is right". `verify_spec.py`
+re-checks the emitted `MEASUREMENTS_JSON` against the spec (the source of truth), so
+the names must match the spec's `critical_measurements`. See `skills/mating_proxies.py`
+for the full proxy + fit-helper API (`bowl_proxy`, `phone_proxy`, `box_proxy`,
+`cylinder_proxy`, `clearance`, `puck_protrusion`, `combine_cog`, `cog_within_footprint`).
 
 ## Design Brief (mandatory before writing CadQuery)
 
@@ -215,9 +256,17 @@ Before writing any CadQuery script, produce a **Design Concept Brief** and get c
 The brief must include:
 
 1. **Component inventory** — a table of every solid body with name, rough W×D×H, and role.
-2. **ASCII side-view or top-view sketch** — a plain-text cross-section showing how components relate spatially.
-3. **Stated assumptions** — anything the design will assume that isn't explicit in the spec (angles, proportions, feature placement).
-4. **Open questions** — anything still ambiguous that should be resolved before writing code.
+2. **ASCII side-view or top-view sketch** — a plain-text cross-section showing how components relate spatially. It **must include the mating part** (bowl, phone, …) drawn in place with a datum line at each target height — you are designing the assembly, not the lone part.
+3. **Functional Fit Math** — a `formula → result → target → ✓/✗` table proving every `critical_measurement` and interface resolves correctly *before any code runs*. If a row fails here, fix the design now; this is the cheapest possible gate:
+   ```
+   Quantity          | Formula                              | Result   | Target       | ?
+   ------------------|--------------------------------------|----------|--------------|----
+   bowl_rest_height  | flare_h + pedestal_h + transition_h  | 113.9 mm | 101.6 ±3 mm  | ✗
+   socket_clearance  | socket_id − bowl_od                  | 4.7 mm   | ≥ 2.0 mm     | ✓
+   puck_protrusion   | puck_thk − recess_depth              | -1.4 mm  | > 0 mm       | ✗
+   ```
+4. **Stated assumptions** — anything the design will assume that isn't explicit in the spec (angles, proportions, feature placement).
+5. **Open questions** — anything still ambiguous that should be resolved before writing code.
 
 Present the brief and wait for user confirmation before writing any CadQuery. If running end-to-end (autonomous mode), include the brief in output and note it was auto-confirmed.
 
@@ -367,7 +416,9 @@ Before delivering a model, verify:
 - [ ] STL exported and file size is reasonable (not 0 bytes)
 - [ ] Clear parameter names with units
 - [ ] Script runs without errors
+- [ ] **VERIFICATION block present**: mating-part proxy exported, `emit_measurements()` called, every `critical_measurement` asserted
+- [ ] **Numeric gate green**: `verify_spec.py --run model.py` reports PASS for all critical measurements
 - [ ] **Multi-view preview generated and visually inspected**
-- [ ] **Preview shows correct shape, features, and proportions**
+- [ ] **Preview shows correct shape, features, proportions, and the mating part resting where intended**
 - [ ] **Bounding box dimensions match requirements**
-- [ ] Both STL and preview PNG delivered to user
+- [ ] Both STL and preview PNG delivered to user (the `__proxy.stl` is NOT delivered)

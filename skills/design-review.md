@@ -90,13 +90,34 @@ VISUAL REVIEW
 [ ] Wall thickness appears sufficient
 [ ] Interior properly hollowed (if applicable)
 [ ] Dimensions match requirements (check footer)
+[ ] Mating part (proxy) shown in preview and rests where intended
+[ ] verify_spec.py numeric gate is green (all critical_measurements PASS)
 ```
 
 ---
 
 ## 3. Dimensional Verification
 
-Beyond visual inspection, verify dimensions programmatically:
+**The numeric gate comes first — it is not optional.** A part can look perfect and
+still be functionally wrong (the dog-bowl riser looked fine; the bowl sat inches
+too high). Before any qualitative judgement, run the spec checker against the
+model's emitted measurements:
+
+```bash
+.venv/bin/python3 verify_spec.py outputs/<slug>/intent_spec.json --run outputs/<slug>/v<N>/model.py
+```
+
+This compares each `critical_measurement` (the spec is the source of truth) to the
+actual value the model reported in its `MEASUREMENTS_JSON` line, and prints a
+PASS/FAIL table in mm + inches. **Any FAIL ⇒ verdict is NEEDS_REVISION**, full
+stop — no qualitative review overrides the gate. Because the spec drives the
+comparison, this also catches a script that "passed" by asserting against a stale
+local constant.
+
+Beyond the gate, the model's own VERIFICATION block emits these measurements and
+prints a `CHECK <name>: PASS/FAIL` self-check (without aborting, so the assembled
+preview always renders). The bounding-box pattern below is the in-script idiom
+used inside that block:
 
 ```python
 import cadquery as cq
@@ -134,6 +155,30 @@ else:
 ```
 
 Note: `preview.py` checks watertight status automatically when generating previews.
+
+---
+
+## 3b. Functional / Assembled-State Verification
+
+The part almost never works alone — it cradles a bowl, holds a phone, mates with a
+connector. Review the **assembly**, not the lone part:
+
+- **Mating part is modelled.** The model's VERIFICATION block must build a proxy
+  (`mating_proxies.bowl_proxy` / `phone_proxy` / `box_proxy` / `cylinder_proxy`)
+  in its functional position and export it as `<name>__proxy.stl`. The preview
+  shows it translucent over the part — confirm it rests exactly where intended.
+- **Datum is the functional one.** Verify the measured value is taken from/to the
+  points the user meant (bowl *underside* vs *rim*, puck *face* vs *recess floor*).
+  A correct number against the wrong datum is still a failure.
+- **Fit / contact / clearance.**
+  - `clearance(socket_id, part_od)` ≥ the spec's fit clearance (part drops in).
+  - `puck_protrusion(puck_thk, recess_depth)` > 0 (MagSafe contacts the phone —
+    a negative value is the exact v10→v11 air-gap bug).
+- **Tipping / stability.** For stands and risers, the combined centre of gravity
+  (`combine_cog` of part + mating proxy) must sit inside the base footprint
+  (`cog_within_footprint` with a safety margin).
+
+Any of these failing is a NEEDS_REVISION even if the bounding box is perfect.
 
 ---
 
