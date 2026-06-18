@@ -8,7 +8,7 @@ _SIDE_W   = 440
 _SIDE_H   = 206
 _GRID_H   = _SIDE_H * 3        # 618
 _TITLE_H  = 52
-_FOOTER_H = 40
+_FOOTER_H = 58
 _TOTAL_W  = _ISO_W + _SIDE_W   # 1040
 _BG       = [0.93, 0.93, 0.93, 1.0]
 _AMBIENT  = np.array([0.3, 0.3, 0.3, 1.0])
@@ -69,10 +69,17 @@ def _make_grid_floor(tm):
     return trimesh.util.concatenate(pieces)
 
 
-def _render_panel(tm, eye_dir, up, w, h, floor_mesh=None):
-    """Render one view. eye_dir is a direction vector (need not be normalized)."""
-    center = tm.bounds.mean(axis=0)
-    dist = max(tm.extents) * 1.75
+def _render_panel(tm, eye_dir, up, w, h, floor_mesh=None, proxy_mesh=None):
+    """Render one view. eye_dir is a direction vector (need not be normalized).
+
+    Framing spans both the part and the proxy so a mating part that rises above
+    the part (e.g. a bowl rim) is never clipped.
+    """
+    frame = [tm] + ([proxy_mesh] if proxy_mesh is not None else [])
+    mins = np.min([m.bounds[0] for m in frame], axis=0)
+    maxs = np.max([m.bounds[1] for m in frame], axis=0)
+    center = (mins + maxs) / 2.0
+    dist = max(maxs - mins) * 1.75
     eye = center + (np.asarray(eye_dir, dtype=float) / np.linalg.norm(eye_dir)) * dist
 
     scene = pyrender.Scene(ambient_light=_AMBIENT, bg_color=_BG)
@@ -82,6 +89,15 @@ def _render_panel(tm, eye_dir, up, w, h, floor_mesh=None):
         roughnessFactor=0.45,
     )
     scene.add(pyrender.Mesh.from_trimesh(tm, smooth=False, material=mat))
+
+    if proxy_mesh is not None:
+        proxy_mat = pyrender.MetallicRoughnessMaterial(
+            baseColorFactor=[0.95, 0.55, 0.35, 0.40],  # translucent amber mating part
+            metallicFactor=0.0,
+            roughnessFactor=0.6,
+            alphaMode="BLEND",
+        )
+        scene.add(pyrender.Mesh.from_trimesh(proxy_mesh, smooth=False, material=proxy_mat))
 
     if floor_mesh is not None:
         scene.add(pyrender.Mesh.from_trimesh(floor_mesh, smooth=False))
@@ -106,8 +122,15 @@ def _label(img, text):
     return img
 
 
-def render_multi_view(tm, output_path, title=None):
-    """Asymmetric layout: large isometric left + 3 stacked orthographic panels right."""
+def render_multi_view(tm, output_path, title=None, proxy_mesh=None,
+                      measurements=None, gate=None):
+    """Asymmetric layout: large isometric left + 3 stacked orthographic panels right.
+
+    proxy_mesh (the mating part: bowl, phone) is drawn translucent over the part
+    so the assembled state is visible. If a spec `gate` is supplied the footer
+    shows actual vs target with PASS/FAIL marks; otherwise it falls back to the
+    raw measured values.
+    """
     floor_mesh = _make_grid_floor(tm)
 
     views = [
@@ -118,12 +141,14 @@ def render_multi_view(tm, output_path, title=None):
     ]
 
     iso_label, iso_eye, iso_up = views[0]
-    iso_panel = _render_panel(tm, iso_eye, iso_up, _ISO_W, _GRID_H, floor_mesh=floor_mesh)
+    iso_panel = _render_panel(tm, iso_eye, iso_up, _ISO_W, _GRID_H,
+                              floor_mesh=floor_mesh, proxy_mesh=proxy_mesh)
     _label(iso_panel, iso_label)
 
     side_panels = []
     for label, eye, up in views[1:]:
-        p = _render_panel(tm, eye, up, _SIDE_W, _SIDE_H, floor_mesh=floor_mesh)
+        p = _render_panel(tm, eye, up, _SIDE_W, _SIDE_H,
+                          floor_mesh=floor_mesh, proxy_mesh=proxy_mesh)
         _label(p, label)
         side_panels.append(p)
 
@@ -157,9 +182,36 @@ def render_multi_view(tm, output_path, title=None):
     footer = "  Bounding box: {:.1f} x {:.1f} x {:.1f} mm  |  Volume: ~{:.0f} mm3".format(
         d[0], d[1], d[2], vol
     )
-    draw.text((8, _TITLE_H + _GRID_H + 14), footer, fill=(100, 100, 100))
+    draw.text((8, _TITLE_H + _GRID_H + 12), footer, fill=(100, 100, 100))
+
+    mtext, all_pass = _format_measurements(measurements, gate)
+    if mtext:
+        color = (70, 110, 70) if all_pass else (170, 60, 60)
+        draw.text((8, _TITLE_H + _GRID_H + 32), mtext, fill=color)
 
     canvas.save(output_path)
+
+
+def _format_measurements(measurements, gate=None):
+    """One-line footer. With a spec `gate`, show actual vs target + PASS/FAIL;
+    otherwise show the raw measured scalars. Returns (text, all_passed)."""
+    if gate and gate.get("results"):
+        parts, all_pass = [], True
+        for r in gate["results"][:4]:
+            mark = "OK" if r["status"] == "PASS" else "X"
+            if r["status"] != "PASS":
+                all_pass = False
+            a = "?" if r["actual"] is None else f"{r['actual']:.1f}"
+            parts.append(f"{r['name']} {a}/{r['target']:.1f}mm [{mark}]")
+        verdict = "GATE PASS" if all_pass else "GATE FAIL"
+        return f"  {verdict}  " + "   ".join(parts), all_pass
+    if measurements:
+        scalars = [(k, v) for k, v in measurements.items()
+                   if isinstance(v, (int, float)) and not isinstance(v, bool)]
+        if scalars:
+            parts = [f"{k}: {v:.1f}mm ({v / 25.4:.2f}in)" for k, v in scalars[:4]]
+            return "  Measured  " + "    ".join(parts), True
+    return "", True
 
 
 def render_single(tm, output_path, w=800, h=600):

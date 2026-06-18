@@ -79,13 +79,26 @@ Determine the object slug from the user's description. Build and save `outputs/<
 - `purpose` — what problem it solves
 - `constraints` — list of hard requirements
 - `material` and `printer`
+- `interaction_model` — how the object meets the thing it serves: one of `drops-in` / `sits-on` / `clips-on` / `screws-on` / `freestanding`. (Getting this wrong = full redesign, not a tweak — see [[feedback_design_concept_first]].)
+- `critical_measurements` — the functional dimensions that actually define success, each with an **explicit datum** (see the datum rule below). List of objects:
+  ```json
+  {
+    "name": "bowl_rest_height",
+    "from": "print bed (z=0)",
+    "to": "underside of bowl where it rests on the socket floor",
+    "value_mm": 101.6, "tolerance_mm": 3.0,
+    "source": "user: 'bowl sits 4 inches above the ground'"
+  }
+  ```
 - `dimensions_needed` — list of dimension names not yet known
 - `dimensions_known` — empty dict until Step 2
 - `assets_needed` — list of reference asset descriptions not yet sourced (e.g. `"cartoon dog bone silhouette SVG"`)
 - `assets_resolved` — empty dict until Step 2; filled with `{name: {file, format, geometry_notes}}`
 - `reference_context` — any notes on products, images, or estimates
 
-**Touch point:** Present the spec and explicitly ask the user to confirm or correct it before moving to Step 2.
+**Datum rule (mandatory).** Any measurement the user states with a vague reference — "4 inches above the ground", "X tall", "from the top", "high" — MUST be rewritten as `from` → `to` points before saving. If the target point is ambiguous (bowl *bottom*? food *surface*? *rim*?), **ask** — do not guess. State the value in mm **and** inches per [[feedback_units]]. Never store the raw phrase as the spec value (this is exactly how the bowl riser shipped at the wrong height — the "4 inches" mapped to nothing physical). Every entry in `critical_measurements` becomes an automated PASS/FAIL gate in Step 4, so name them the same as the variables the model will report.
+
+**Touch point:** Present the spec — including `interaction_model` and every `critical_measurement` with its from→to datum — and explicitly ask the user to confirm or correct it before moving to Step 2.
 
 ### Step 2 — Reference Resolution (dimensions + assets)
 
@@ -149,9 +162,22 @@ e.g. socket     | 55.8 mm dia, 3.5 deep   | cut into panel front face
      base
 ```
 
-**3. Stated Assumptions** — anything not explicitly in the spec that the design will assume (angles, proportions, feature placement).
+**3. Functional Fit Math** — a table that works out, *numerically and before any code*, how every `critical_measurement` and mating interface resolves. Each row is `formula → result → target → ✓/✗`. This is the cheapest gate: if the math misses the target here, the design is wrong before a single solid is built. Examples mapping to past failures:
+```
+Quantity          | Formula                              | Result   | Target       | ?
+------------------|--------------------------------------|----------|--------------|----
+bowl_rest_height  | flare_h + pedestal_h + transition_h  | 113.9 mm | 101.6 ±3 mm  | ✗  ← fix before coding
+socket_clearance  | socket_id − bowl_od                  | 4.7 mm   | ≥ 2.0 mm     | ✓
+puck_protrusion   | puck_thk − recess_depth              | -1.4 mm  | > 0 mm       | ✗  ← MagSafe air gap
+tip_margin (CoG)  | cog_x within base footprint          | yes      | inside       | ✓
+cable_slot        | connector_w + clearance              | 6.75 mm  | ≥ measured   | ✓
+```
 
-**4. Open Questions** — flag anything still ambiguous before committing to code.
+**4. Assembled-state sketch requirement** — the ASCII sketch in part 2 MUST include the mating part (the bowl, the phone) drawn in place and a datum line at each target height. You are designing the *assembly*, not the lone part. Restate, in one line, where the mating part ends up (e.g. "bowl underside rests at 101.6 mm; rim at ~157 mm").
+
+**5. Stated Assumptions** — anything not explicitly in the spec that the design will assume (angles, proportions, feature placement).
+
+**6. Open Questions** — flag anything still ambiguous before committing to code.
 
 **Touch point:** Present the brief and **wait for the user to confirm or correct it** before writing any CadQuery. This step is mandatory in interactive mode. Only skip it if the user explicitly requested "end-to-end" or "don't interrupt me" in their original request — even then, include the brief in your output and note it was auto-confirmed.
 
@@ -171,13 +197,18 @@ Follow the Script Template and all Key Rules in that file.
 
 Determine the version directory: check existing `vN` folders under `outputs/<slug>/`, use `v(N+1)`. For a new object this is always `v1`.
 
-1. Write the complete CadQuery script to `outputs/<slug>/v<N>/model.py`
-2. Run it — always with `--preview` so every build produces an image:
+1. Write the complete CadQuery script to `outputs/<slug>/v<N>/model.py`. It **must** end with a `# === VERIFICATION ===` block (see the Script Template in `skills/cad_skill.md`) that:
+   - builds a proxy of the mating part in its functional position using `skills/mating_proxies.py` (`bowl_proxy`, `phone_proxy`, `box_proxy`, …) and exports it via `mp.export_proxy(...)` to `<name>__proxy.stl`;
+   - computes every `critical_measurement` on the real geometry plus fit clearances;
+   - calls `mp.emit_measurements({...})` to print the `MEASUREMENTS_JSON:` line, using the same names as the spec's `critical_measurements`;
+   - prints a quick `CHECK <name>: PASS/FAIL` self-check but does **not** hard-abort — always let the build finish so the assembled preview renders even when a value is off (the authoritative gate is `verify_spec.py` in Step 4).
+2. Run it — always with `--preview` and pass `--spec` so the build and the numeric gate happen in **one command**:
    ```bash
-   .venv/bin/python3 run_cadquery_model.py outputs/<slug>/v<N>/model.py --preview --strict
+   .venv/bin/python3 run_cadquery_model.py outputs/<slug>/v<N>/model.py --preview --strict --spec outputs/<slug>/intent_spec.json
    ```
-3. If `success` is false, read `stderr`, fix the script, re-run. Repeat until success.
-4. **Touch point:** Show the user the preview image and key dimensions. Ask if anything needs to change before running the design review.
+   The preview shows the mating part translucent over the model with each measurement's **actual/target + PASS/FAIL** in the footer; the JSON result carries `measurements` and `gate` (`gate.passed` + per-measurement results).
+3. If `success` is false, read `stderr`, fix the geometry, re-run. Repeat until success (a build failure here means invalid geometry, not a wrong dimension — that is caught by the gate in Step 4).
+4. **Touch point:** Show the user the assembled preview and the measured `critical_measurements` (mm + inches). Ask if anything needs to change before running the design review.
 
 All dimensions must come from `dimensions_known` — never invent values.
 
@@ -189,14 +220,24 @@ writing or continuing the CadQuery script. Never approximate or invent a shape t
 should come from a sourced reference.
 
 ### Step 4 — Design Review
-Read `skills/design-review.md`. For the generated script and run output, check:
-- Every constraint from the spec (PASS / FAIL / UNCERTAIN)
-- Printability: overhangs, wall thickness ≥ 1.2mm, flat print surface, supports needed
-- Dimensional correctness: bounding box matches spec
+Read `skills/design-review.md`. The review is **assertion-first**: the numeric gate runs before any qualitative judgement.
 
-Fix and re-run if any constraint fails. Produce a final verdict: APPROVED or NEEDS_REVISION.
+1. **Numeric gate (must pass to approve).** If you ran Step 3 with `--spec`, the gate is already in the JSON (`gate.passed`) and the preview footer. To re-check without rebuilding:
+   ```bash
+   .venv/bin/python3 verify_spec.py outputs/<slug>/intent_spec.json --run outputs/<slug>/v<N>/model.py
+   ```
+   Every `critical_measurement` must report PASS (actual within target ± tolerance, shown in mm + inches; supports `eq`/`min`/`max` comparisons). The spec is the source of truth, so this also catches a script that "passed" by asserting against a stale constant. **Any FAIL ⇒ verdict is NEEDS_REVISION** — no amount of qualitative review overrides it.
+2. **Qualitative checks** (on top of the gate):
+   - Every constraint from the spec (PASS / FAIL / UNCERTAIN)
+   - Printability: overhangs, wall thickness ≥ 1.2mm, flat print surface, supports needed
+   - Dimensional correctness: bounding box matches spec
+   - Assembled state: the proxy in the preview rests where intended
 
-**Touch point:** Present the full review (constraint results + printability + verdict). If NEEDS_REVISION, explain what will change and get user sign-off before applying fixes.
+Fix and re-run if anything fails. Produce a final verdict: APPROVED (gate green + qualitative clean) or NEEDS_REVISION.
+
+**Batch-tuning rule (fewer revisions).** Before writing `v(N+1)`, list **all** known issues and fix them in one pass — never ship a single-parameter nudge while other functional checks are still pending (this is what turned the phone stand into 11 versions). Keep "functional must-pass" (the numeric gate) separate from "aesthetic": an aesthetic-only change must still re-pass the full gate before delivery.
+
+**Touch point:** Present the full review (numeric gate table + constraint results + printability + verdict). If NEEDS_REVISION, explain the complete set of changes and get user sign-off before applying fixes.
 
 ### Step 5 — Deliver
 Report to the user:
@@ -248,11 +289,14 @@ Write this entry yourself — do NOT call `logger_agent.py` in Claude Code sessi
 ## Key Files
 | File | Purpose |
 |------|---------|
-| `skills/cad_skill.md` | CadQuery patterns, rules, Script Template |
-| `skills/design-review.md` | Visual inspection checklist, printability analysis |
-| `run_cadquery_model.py` | Runs a CadQuery script, returns JSON result |
-| `preview.py` | Renders multi-view and single-view preview PNGs from trimesh |
+| `skills/cad_skill.md` | CadQuery patterns, rules, Script Template (incl. VERIFICATION block) |
+| `skills/design-review.md` | Visual inspection checklist, printability analysis, assembled-state checks |
+| `skills/mating_proxies.py` | Reusable mating-part proxies (bowl/phone/box) + fit helpers + `emit_measurements` |
+| `run_cadquery_model.py` | Runs a CadQuery script, returns JSON result (incl. parsed `measurements`) |
+| `verify_spec.py` | Numeric gate: PASS/FAIL of measured values vs spec `critical_measurements` |
+| `preview.py` | Renders multi-view previews (mating part translucent, measurements in footer) |
 | `outputs/<slug>/intent_spec.json` | Per-object spec (shared across all versions) |
+| `outputs/<slug>/v<N>/<name>__proxy.stl` | Proxy of the mating part — preview/verification only, never printed |
 | `outputs/<slug>/assets/<name>.svg` | Reference SVG downloaded by Reference Agent |
 | `outputs/<slug>/assets/<name>_polygon.json` | Fallback polygon outline (if no SVG) |
 | `outputs/<slug>/v<N>/model.py` | Generated CadQuery script (versioned) |

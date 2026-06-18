@@ -34,6 +34,12 @@ import subprocess
 import sys
 import time
 
+from verify_spec import compare, parse_measurements_line
+
+# Proxy meshes (mating part: the bowl, the phone) are exported with this suffix.
+# They are preview/verification aids, never deliverables — kept out of result["stls"].
+_PROXY_SUFFIX = "__proxy.stl"
+
 
 def _sibling(path, suffix):
     return os.path.splitext(path)[0] + suffix
@@ -64,14 +70,24 @@ def _new_files_by_ext(script_dir, after_mtime, exts):
     }
 
 
-def _process_stls(stls, views, strict, want_preview):
+def _process_stls(stls, views, strict, want_preview, proxy_path=None,
+                  measurements=None, gate=None):
     """Load each STL once — check watertightness and optionally render preview.
 
-    pyrender is imported lazily so --strict alone stays headless-safe.
+    pyrender is imported lazily so --strict alone stays headless-safe. A proxy
+    mesh (the mating part) is rendered translucent and the spec'd measurements
+    are annotated in the footer so the assembled state is visible.
     """
     import mesh_io
 
     out = {"previews": [], "watertights": [], "error": None}
+
+    proxy_tm = None
+    if want_preview and proxy_path:
+        try:
+            proxy_tm = mesh_io.load_mesh(proxy_path)
+        except ValueError:
+            proxy_tm = None  # a bad proxy must never block the real preview
 
     for stl in stls:
         try:
@@ -94,7 +110,10 @@ def _process_stls(stls, views, strict, want_preview):
                 if views == "multi":
                     slug = os.path.splitext(os.path.basename(stl))[0]
                     title = re.sub(r"[_\-]+", " ", slug).title()
-                    preview.render_multi_view(tm, preview_path, title=title)
+                    preview.render_multi_view(tm, preview_path, title=title,
+                                              proxy_mesh=proxy_tm,
+                                              measurements=measurements,
+                                              gate=gate)
                 else:
                     preview.render_single(tm, preview_path)
             except Exception as e:
@@ -114,6 +133,9 @@ def main():
                         help="Render a multi-view preview PNG for every STL produced")
     parser.add_argument("--strict", action="store_true",
                         help="Fail if any STL is non-watertight or if no STL was produced")
+    parser.add_argument("--spec",
+                        help="intent_spec.json: run the numeric gate on the model's "
+                             "emitted measurements and attach the result as 'gate'")
     parser.add_argument("--views", choices=["iso", "multi"], default="multi",
                         help="Preview layout: iso or multi (default: multi)")
     parser.add_argument("--timeout", type=int, default=180,
@@ -128,7 +150,8 @@ def main():
         "stls": [], "stl": None,
         "previews": [], "preview": None,
         "threemfs": [], "threemf": None,
-        "watertight": None, "stdout": "", "stderr": "", "returncode": -1,
+        "watertight": None, "measurements": None, "gate": None,
+        "stdout": "", "stderr": "", "returncode": -1,
     }
 
     started = time.time()
@@ -153,10 +176,26 @@ def main():
     result["returncode"] = proc.returncode
     result["success"] = proc.returncode == 0
 
+    proxy_stl = None
     if result["success"]:
         found = _new_files_by_ext(script_dir, started, ("stl", "3mf"))
-        result["stls"] = found["stl"]
+        all_stls = found["stl"]
+        proxies = [s for s in all_stls if s.lower().endswith(_PROXY_SUFFIX)]
+        result["stls"] = [s for s in all_stls if not s.lower().endswith(_PROXY_SUFFIX)]
         result["threemfs"] = found["3mf"]
+        proxy_stl = proxies[0] if proxies else None
+        result["measurements"] = parse_measurements_line(result["stdout"])
+        if args.spec and result["measurements"]:
+            try:
+                with open(args.spec) as f:
+                    spec = json.load(f)
+                gate_results = compare(spec, result["measurements"])
+                result["gate"] = {
+                    "passed": all(r["status"] == "PASS" for r in gate_results),
+                    "results": gate_results,
+                }
+            except (OSError, ValueError, KeyError, json.JSONDecodeError) as e:
+                _append_stderr(result, f"Spec gate skipped: {e}")
 
     if args.strict and result["success"] and not result["stls"]:
         _append_stderr(result, "No STL files produced by the script (--strict set).")
@@ -165,7 +204,10 @@ def main():
     needs_mesh_pass = args.preview or args.strict
     if needs_mesh_pass and result["success"] and result["stls"]:
         processed = _process_stls(result["stls"], args.views, args.strict,
-                                   want_preview=args.preview)
+                                   want_preview=args.preview,
+                                   proxy_path=proxy_stl,
+                                   measurements=result["measurements"],
+                                   gate=result["gate"])
         result["previews"] = processed["previews"]
         if processed["watertights"]:
             result["watertight"] = all(processed["watertights"])
