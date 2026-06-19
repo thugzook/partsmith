@@ -50,20 +50,20 @@ the appropriate step based on what the spec already contains.
 ---
 
 ## Anti-Drift Rule
-Before executing any step, read the corresponding agent file listed below. The agent
-files are the single source of truth for what each step does — CLAUDE.md describes
-WHEN to run each step, the agent files describe HOW. If the two ever conflict, the
-agent file wins.
+Before executing a step, read the corresponding skill file listed below. The skill
+files are the single source of truth for **how** each step works — CLAUDE.md
+describes **when** to run each step. If the two ever conflict, the skill file wins.
 
-| Step | Agent file to read first |
-|------|--------------------------|
-| Intent | `agents/intent_agent.py` |
-| Dimensions | `agents/reference_agent.py` |
-| Design + Review | `agents/designer_reviewer.py` |
-| Log | `agents/logger_agent.py` |
+| Step | Source of truth to read first |
+|------|-------------------------------|
+| Intent | `skills/cad_skill.md` (Requirements Gathering) + Step 1 below |
+| Dimensions + Assets | Step 2 below + `skills/cad_skill.md` |
+| Design | `skills/cad_skill.md` (Script Template, Key Rules) + `skills/mating_proxies.py` |
+| Review | `skills/design-review.md` (incl. §0 The Board) |
+| Log | Step 6 below (self-contained) |
 
-Read the agent's module docstring and key functions before proceeding. Mirror its
-behavior natively using your tools (Read, Edit, Bash) rather than calling the API.
+Read the relevant section before proceeding, then execute the step natively with
+your tools (Read, Edit, Bash).
 
 ---
 
@@ -85,6 +85,12 @@ reviewer. The full loop and the `review_render.py` helper live in
 `skills/design-review.md` §0. **Honesty rule:** never describe a feature as present
 unless you or the reviewer can point to it in the actual render — "gate green" ≠
 "looks right"; if you can't verify it, say so.
+
+**Models per role:** orchestrator = Opus (the lead's runtime model — it does the
+judgment + the small modify-edits), designer = Opus (geometry correctness is the
+highest-stakes reasoning), reviewer = Sonnet (renders/looks/measures on every
+change; a cheaper, independent second opinion). Set in each agent's frontmatter;
+the orchestrator's model is whatever you launch Claude Code on.
 
 ---
 
@@ -302,8 +308,8 @@ After delivery, append one entry to `outputs/session_log.json` (always at the ro
 }
 ```
 
-Write this entry yourself — do NOT call `logger_agent.py` in Claude Code sessions.
-`logger_agent.py` is used only by the Python/UI pipeline.
+Write this entry yourself — the orchestrator (lead) owns logging; append the JSON
+directly. Sub-agents (designer/reviewer) do not log.
 
 ---
 
@@ -323,22 +329,12 @@ Write this entry yourself — do NOT call `logger_agent.py` in Claude Code sessi
 | `preview.py` | Renders multi-view previews (mating part translucent, measurements in footer) |
 | `outputs/<slug>/intent_spec.json` | Per-object spec (shared across all versions) |
 | `outputs/<slug>/v<N>/<name>__proxy.stl` | Proxy of the mating part — preview/verification only, never printed |
-| `outputs/<slug>/assets/<name>.svg` | Reference SVG downloaded by Reference Agent |
+| `outputs/<slug>/assets/<name>.svg` | Reference SVG sourced in Step 2 (Reference Resolution) |
 | `outputs/<slug>/assets/<name>_polygon.json` | Fallback polygon outline (if no SVG) |
 | `outputs/<slug>/v<N>/model.py` | Generated CadQuery script (versioned) |
 | `outputs/<slug>/v<N>/<name>.stl` | STL output (versioned, never overwritten) |
 | `outputs/<slug>/v<N>/<name>_preview.png` | Preview image (versioned) |
 | `outputs/session_log.json` | Append-only log of all completed sessions |
-
-## Python Agents (UI Pipeline Only)
-The files in `agents/` are for the Streamlit UI pipeline — they call the Anthropic API
-directly and should NOT be run during Claude Code sessions. In Claude Code, you (Claude)
-execute the workflow natively using your tools.
-
-| Agent | Role |
-|-------|------|
-| `agents/intent_agent.py` | Conversational spec builder |
-| `agents/reference_agent.py` | Dimension + asset resolver |
-| `agents/designer_reviewer.py` | CadQuery generator + validator (Opus 4.8) |
-| `agents/logger_agent.py` | Session summarizer (Sonnet) |
-| `main.py` | Orchestrator for the full Python pipeline |
+| `.claude/agents/cad-designer.md` | Designer subagent (new builds / major redesigns) |
+| `.claude/agents/cad-reviewer.md` | Independent reviewer subagent (runs before delivery) |
+| `review_render.py` | Big single-subject + reference side-by-side render for review |

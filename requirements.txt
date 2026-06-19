@@ -6,6 +6,3 @@ pyrender>=0.1.45,<0.2
 Pillow>=10,<13
 numpy>=1.24,<3
 lxml>=4.9,<7
-
-# Anthropic SDK for agent LLM calls
-anthropic>=0.40,<1
