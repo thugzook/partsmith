@@ -170,20 +170,20 @@
       "walls": "2",
       "infill": "15% gyroid",
       "supports": "none",
-      "orientation": "Base: open side up. Lid: skirt-down on bed (bone emboss prints last, top quality) — no supports needed either way."
+      "orientation": "Base: open side up. Lid: skirt-down on bed (bone emboss prints last, top quality) \u2014 no supports needed either way."
     },
     "key_decisions": [
-      "Lid built as two-piece union: top plate (same outer footprint, 2mm thick) + hollow skirt tube (skirt_outer = base_inner − 2×tolerance = 75.6×55.6mm, depth = lid_h − wall_t = 6mm). Skirt is boolean subtraction, not shell.",
+      "Lid built as two-piece union: top plate (same outer footprint, 2mm thick) + hollow skirt tube (skirt_outer = base_inner \u2212 2\u00d7tolerance = 75.6\u00d755.6mm, depth = lid_h \u2212 wall_t = 6mm). Skirt is boolean subtraction, not shell.",
       "Skirt outer fillet capped at 1mm (below wall_t=2mm) to avoid thin-wall geometry at corners.",
-      "Lid plate overhang over skirt is 2.2mm/side — prints without supports.",
-      "Dog bone emboss reused from dog_water_bowl assets at scale 0.45 (45×18.6mm), raised 1mm proud on flat lid top.",
+      "Lid plate overhang over skirt is 2.2mm/side \u2014 prints without supports.",
+      "Dog bone emboss reused from dog_water_bowl assets at scale 0.45 (45\u00d718.6mm), raised 1mm proud on flat lid top.",
       "Tolerance 0.2mm/side for PLA friction fit on Prusa MK4S."
     ],
     "lessons_learned": [
-      "Friction-fit lip / stackable peg pattern: skirt_outer = base_inner − 2×tolerance; skirt_depth = lid_h − wall_t. For stackable objects, add the same skirt geometry to the BOTTOM of each tier so it pegs into the open top of the tier below. Same tolerance and fillet values apply."
+      "Friction-fit lip / stackable peg pattern: skirt_outer = base_inner \u2212 2\u00d7tolerance; skirt_depth = lid_h \u2212 wall_t. For stackable objects, add the same skirt geometry to the BOTTOM of each tier so it pegs into the open top of the tier below. Same tolerance and fillet values apply."
     ]
-  }
-  ,{
+  },
+  {
     "timestamp": "2026-06-04T13:00:00Z",
     "object": "rounded corner box with lid",
     "slug": "rounded_corner_box",
@@ -211,17 +211,17 @@
       "walls": "2",
       "infill": "15% gyroid",
       "supports": "none",
-      "orientation": "Base: open side up. Lid: skirt-down on bed — no supports needed either way."
+      "orientation": "Base: open side up. Lid: skirt-down on bed \u2014 no supports needed either way."
     },
     "key_decisions": [
-      "Fixed SKIRT_R from v1's conservative 1mm to correct formula SKIRT_R = INNER_R - TOLERANCE = 2.8mm — eliminates visible corner mismatch and interference between skirt and base cavity corners.",
-      "All other geometry unchanged from v1 — only the skirt corner fillet radius corrected."
+      "Fixed SKIRT_R from v1's conservative 1mm to correct formula SKIRT_R = INNER_R - TOLERANCE = 2.8mm \u2014 eliminates visible corner mismatch and interference between skirt and base cavity corners.",
+      "All other geometry unchanged from v1 \u2014 only the skirt corner fillet radius corrected."
     ],
     "lessons_learned": [
       "Skirt fillet formula SKIRT_R = INNER_R - TOLERANCE (2.8mm) confirmed correct for friction fit. Conservative 1mm caused skirt corners to be visibly more rectangular than the base inner cavity, creating interference at corners."
     ]
-  }
-  ,{
+  },
+  {
     "timestamp": "2026-06-04T23:18:00Z",
     "object": "dog food bowl riser",
     "slug": "dog_food_bowl_riser",
@@ -248,20 +248,20 @@
       "layer_height": "0.2mm",
       "walls": "3",
       "infill": "15% gyroid",
-      "supports": "none — open cylinder, inner step faces upward",
+      "supports": "none \u2014 open cylinder, inner step faces upward",
       "orientation": "flat bottom on bed, open top facing up"
     },
     "key_decisions": [
-      "Retaining lip formed by stepped inner bore: main bore 108.3mm ID (bottom 93.6mm), then lip bore 92.3mm ID (top 8mm) — creates an 8mm-wide annular shelf at Z=93.6mm that the bowl base rests on.",
-      "Fit clearance set to 1.0mm (generous) per user request to account for measurement error — lip opening 92.3mm accommodates bowl bases up to ~90mm.",
-      "Chamfer applied to outer bottom edge of the solid cylinder BEFORE boolean cuts — applying after cuts selects inner bore edges too and causes OCC failure.",
-      "Open top and bottom (no floor) — easy to clean, structurally sufficient as the 3mm walls carry all load."
+      "Retaining lip formed by stepped inner bore: main bore 108.3mm ID (bottom 93.6mm), then lip bore 92.3mm ID (top 8mm) \u2014 creates an 8mm-wide annular shelf at Z=93.6mm that the bowl base rests on.",
+      "Fit clearance set to 1.0mm (generous) per user request to account for measurement error \u2014 lip opening 92.3mm accommodates bowl bases up to ~90mm.",
+      "Chamfer applied to outer bottom edge of the solid cylinder BEFORE boolean cuts \u2014 applying after cuts selects inner bore edges too and causes OCC failure.",
+      "Open top and bottom (no floor) \u2014 easy to clean, structurally sufficient as the 3mm walls carry all load."
     ],
     "lessons_learned": [
       "Chamfer on bottom outer edge after stepped-bore boolean cuts fails with OCC error because the selector picks both outer and inner bottom edges. Fix: apply chamfer to the outer cylinder primitive before performing any boolean cuts."
     ]
-  }
-  ,{
+  },
+  {
     "timestamp": "2026-06-04T23:45:00Z",
     "object": "dog food bowl riser",
     "slug": "dog_food_bowl_riser",
@@ -290,23 +290,23 @@
       "layer_height": "0.2mm",
       "walls": "3",
       "infill": "15% gyroid",
-      "supports": "none — transition slopes at 52 deg from horizontal",
+      "supports": "none \u2014 transition slopes at 52 deg from horizontal",
       "orientation": "flat bottom on bed, socket facing up"
     },
     "key_decisions": [
-      "Corrected design concept: bowl drops INTO a socket (v1 had wrong concept — internal shelf the bowl sat on top of). Socket walls wrap around the bowl exterior to retain it.",
+      "Corrected design concept: bowl drops INTO a socket (v1 had wrong concept \u2014 internal shelf the bowl sat on top of). Socket walls wrap around the bowl exterior to retain it.",
       "Three-section outer solid: pedestal cylinder (88mm OD) + tapered frustum transition + socket ring (127mm OD). Two-section loft used only for the frustum.",
-      "Transition frustum angle 52 deg from horizontal (pedestal 88mm → socket 127mm over 25mm height) — above 45 deg threshold, no supports needed.",
-      "Inner bores as two separate straight cylinders: pedestal bore (82mm ID, 0→67mm) + socket bore (119mm ID, 67→101.6mm). The annular shelf at Z=67mm supports the bowl.",
+      "Transition frustum angle 52 deg from horizontal (pedestal 88mm \u2192 socket 127mm over 25mm height) \u2014 above 45 deg threshold, no supports needed.",
+      "Inner bores as two separate straight cylinders: pedestal bore (82mm ID, 0\u219267mm) + socket bore (119mm ID, 67\u2192101.6mm). The annular shelf at Z=67mm supports the bowl.",
       "Chamfer applied to pedestal primitive before union operations (v1 lesson preserved)."
     ],
     "lessons_learned": [
-      "Always confirm the physical interaction model before designing: 'does the item sit ON TOP, drop INTO, or clip ONTO?' Wrong concept cannot be fixed by tuning dimensions — it requires a full redesign.",
+      "Always confirm the physical interaction model before designing: 'does the item sit ON TOP, drop INTO, or clip ONTO?' Wrong concept cannot be fixed by tuning dimensions \u2014 it requires a full redesign.",
       "User sketches are the authoritative spec and override text descriptions. Read the sketch for the interaction model first.",
-      "Always read intent_spec.json before asking clarifying questions — the bowl OD (114.3mm) was already recorded in the spec and should not have been re-asked during the redesign discussion."
+      "Always read intent_spec.json before asking clarifying questions \u2014 the bowl OD (114.3mm) was already recorded in the spec and should not have been re-asked during the redesign discussion."
     ]
-  }
-  ,{
+  },
+  {
     "timestamp": "2026-06-05T01:45:00Z",
     "object": "iPhone 17 phone stand",
     "slug": "iphone17_vertical_stand",
@@ -345,19 +345,19 @@
       "orientation": "base flat on bed, spine standing upright"
     },
     "key_decisions": [
-      "Spine built as YZ cross-section extrusion (parallelogram) instead of box+rotate — eliminates watertight issues from spine-base gap that appear after rotation.",
+      "Spine built as YZ cross-section extrusion (parallelogram) instead of box+rotate \u2014 eliminates watertight issues from spine-base gap that appear after rotation.",
       "Spine embedded 2mm into base (starts at Z=base_h-2) for guaranteed volumetric overlap, ensuring clean boolean union.",
-      "MagSafe is a through-hole (56.5mm dia): puck inserted from rear, held by phone magnets. Recess approach failed — horizontal cylinder on tilted face only opens the upper half-circle; lower arc is a hidden internal void.",
+      "MagSafe is a through-hole (56.5mm dia): puck inserted from rear, held by phone magnets. Recess approach failed \u2014 horizontal cylinder on tilted face only opens the upper half-circle; lower arc is a hidden internal void.",
       "Cable slot (5mm wide) cuts straight through spine+base from puck-hole bottom, overlapping puck hole by 1mm to avoid tangent-edge OCC boolean failure.",
-      "front_clearance = 12mm (phone_t + case margin); rear_clearance = 30mm — phone CG ~19mm rearward from spine, stand is anti-tip stable."
+      "front_clearance = 12mm (phone_t + case margin); rear_clearance = 30mm \u2014 phone CG ~19mm rearward from spine, stand is anti-tip stable."
     ],
     "lessons_learned": [
-      "Horizontal cylinder cut into a tilted face creates only a half-circle opening — the lower arc is a hidden internal void. Always use through-holes for charger cutouts on tilted panels.",
+      "Horizontal cylinder cut into a tilted face creates only a half-circle opening \u2014 the lower arc is a hidden internal void. Always use through-holes for charger cutouts on tilted panels.",
       "Cable slot must overlap the puck hole by at least 1mm (not tangent) to avoid OCC boolean failure on the shared edge.",
-      "Cut cable slots from the combined base+spine result, not from the spine alone — the base union seals the embedded overlap region and closes any spine-only cuts."
+      "Cut cable slots from the combined base+spine result, not from the spine alone \u2014 the base union seals the embedded overlap region and closes any spine-only cuts."
     ]
-  }
-  ,{
+  },
+  {
     "timestamp": "2026-06-04T16:45:00Z",
     "object": "dog food bowl riser",
     "slug": "dog_food_bowl_riser",
@@ -389,20 +389,20 @@
       "layer_height": "0.2mm",
       "walls": "3",
       "infill": "15% gyroid",
-      "supports": "none — flare self-supporting (narrows going up); transition at 52 deg",
+      "supports": "none \u2014 flare self-supporting (narrows going up); transition at 52 deg",
       "orientation": "flat flare base on bed, socket facing up"
     },
     "key_decisions": [
-      "Solid flared base: 150mm OD → 88mm OD over 20mm — ~70% more footprint than v2, mass concentrated at base lowers CoG.",
-      "Flare section kept solid (no hollow) — maximises base mass for stability, simplifies geometry.",
+      "Solid flared base: 150mm OD \u2192 88mm OD over 20mm \u2014 ~70% more footprint than v2, mass concentrated at base lowers CoG.",
+      "Flare section kept solid (no hollow) \u2014 maximises base mass for stability, simplifies geometry.",
       "Pedestal height reduced from 101.6mm to 68.9mm so total height decreases by exactly 0.5in (12.7mm) to 131.2mm.",
-      "Chamfer applied to flare primitive using faces('<Z').edges().chamfer() — same pattern as cylinder, works correctly on loft frustum bottom face."
+      "Chamfer applied to flare primitive using faces('<Z').edges().chamfer() \u2014 same pattern as cylinder, works correctly on loft frustum bottom face."
     ],
     "lessons_learned": [
       "Anti-tip flared base: solid frustum wider at bottom tapering to pedestal OD over 20mm provides ~70% more footprint, lowers CoG, adds no overhang risk. Keep flare solid, deduct flare height from pedestal height to control total model height."
     ]
-  }
-  ,{
+  },
+  {
     "timestamp": "2026-06-06T22:00:00Z",
     "object": "desk backpack hook",
     "slug": "desk_backpack_hook",
@@ -437,16 +437,16 @@
     },
     "key_decisions": [
       "S/Z extruded profile: both top arm and lower arm extend in the same direction (toward desk interior), not opposite. This keeps the backpack weight pulling the hook into the desk edge rather than tipping it forward.",
-      "Stop tab at far end of lower arm: 15mm tall upturned retainer built into the 2D profile polygon — no separate union needed.",
-      "3mm fillets applied only to |Y edges (extrusion-direction edges) — avoids complex OCC fillet failures on post-union topology while still giving a soft rounded look.",
+      "Stop tab at far end of lower arm: 15mm tall upturned retainer built into the 2D profile polygon \u2014 no separate union needed.",
+      "3mm fillets applied only to |Y edges (extrusion-direction edges) \u2014 avoids complex OCC fillet failures on post-union topology while still giving a soft rounded look.",
       "Uniform 8mm wall thickness throughout for load-bearing integrity in PLA under backpack weight."
     ],
     "lessons_learned": [
-      "Gravity-lock desk hook: both arms must extend the same direction (toward desk interior) so backpack weight presses the hook INTO the desk edge — not away from it. Opposite arms create a tipping moment.",
-      "S/Z profile extruded from XZ workplane is the cleanest approach for complex 2D profiles — single solid body, clean topology, reliable filleting vs union-of-boxes."
+      "Gravity-lock desk hook: both arms must extend the same direction (toward desk interior) so backpack weight presses the hook INTO the desk edge \u2014 not away from it. Opposite arms create a tipping moment.",
+      "S/Z profile extruded from XZ workplane is the cleanest approach for complex 2D profiles \u2014 single solid body, clean topology, reliable filleting vs union-of-boxes."
     ]
-  }
-  ,{
+  },
+  {
     "timestamp": "2026-06-07T01:25:00Z",
     "object": "desk backpack hook",
     "slug": "desk_backpack_hook",
@@ -479,25 +479,25 @@
       "walls": "3 perimeters (6mm members print near-solid)",
       "infill": "30% gyroid",
       "supports": "none",
-      "orientation": "lay flat on one 25.4mm (1in) Y-face; the 己/Z profile stands vertical => 0% overhangs; add 5mm brim (tall, narrow footprint)"
+      "orientation": "lay flat on one 25.4mm (1in) Y-face; the \u5df1/Z profile stands vertical => 0% overhangs; add 5mm brim (tall, narrow footprint)"
     },
     "key_decisions": [
-      "Corrected the profile to a folded-ribbon 己/Z per the user's side-view sketch: the counterbalance TOP ARM extends backward (toward desk interior) while the CRADLE extends FORWARD (toward/past the desk edge) — OPPOSITE directions, spine on the interior (left) side. This supersedes v1/v2's 'both arms same direction' assumption.",
-      "Mid lip extended to the full top-arm length (50.8mm) so the desk is clamped over its full span — removes the cantilever that made v2/v3.0 look unstable.",
-      "Spine relocated to the interior (left) end; both grip arms run to the mouth wall, so the cradle (63.5mm) ends just 12.7mm past the mouth — 'a bit further' per the user.",
+      "Corrected the profile to a folded-ribbon \u5df1/Z per the user's side-view sketch: the counterbalance TOP ARM extends backward (toward desk interior) while the CRADLE extends FORWARD (toward/past the desk edge) \u2014 OPPOSITE directions, spine on the interior (left) side. This supersedes v1/v2's 'both arms same direction' assumption.",
+      "Mid lip extended to the full top-arm length (50.8mm) so the desk is clamped over its full span \u2014 removes the cantilever that made v2/v3.0 look unstable.",
+      "Spine relocated to the interior (left) end; both grip arms run to the mouth wall, so the cradle (63.5mm) ends just 12.7mm past the mouth \u2014 'a bit further' per the user.",
       "Walls reduced 8->6mm uniform after a load check: the cradle is the only real load path and, printed on-side, its bending stress runs along the layers (not across them) -> SF ~1.4 for a normal bag at 6mm, ~27% less material.",
       "Stop tab shortened 15->10mm; thickness kept = wall (6mm) for consistent thickness per user request.",
       "Fillet reduced 3->2mm: a 3mm fillet overlaps on both parallel edges of a 6mm-wide face (OCC BRep failure).",
       "Built as overlapping Y-extruded boxes (every fold overlaps its neighbour) -> verified ONE shell: Solids==1, watertight, Euler==2, mesh splits to 1 body."
     ],
     "lessons_learned": [
-      "A user's side-view sketch OVERRIDES prior text assumptions. The desk hook is a folded ribbon (己/Z): the load arm (cradle) extends FORWARD past the desk edge, OPPOSITE the counterbalance top arm — NOT the same direction claimed by v1's lesson. Verify fold direction against the sketch before coding.",
+      "A user's side-view sketch OVERRIDES prior text assumptions. The desk hook is a folded ribbon (\u5df1/Z): the load arm (cradle) extends FORWARD past the desk edge, OPPOSITE the counterbalance top arm \u2014 NOT the same direction claimed by v1's lesson. Verify fold direction against the sketch before coding.",
       "'One continuous piece' failures come from members that only touch (share a face) instead of overlapping. Make every fold volumetrically overlap its neighbour and assert solids()==1 / watertight / Euler==2.",
       "Max fillet radius on a member filleted on BOTH parallel edges of a face is just under half the face width: 3mm fails on a 6mm wall; use 2mm.",
-      "The standard overhang formula counts the flat bed face as a 90deg overhang. For a constant-section prism printed on its extrusion-axis face, real overhangs are 0 — verify by excluding bed-contact (y≈ymin) faces."
+      "The standard overhang formula counts the flat bed face as a 90deg overhang. For a constant-section prism printed on its extrusion-axis face, real overhangs are 0 \u2014 verify by excluding bed-contact (y\u2248ymin) faces."
     ]
-  }
-  ,{
+  },
+  {
     "timestamp": "2026-06-07T12:36:00Z",
     "object": "desk backpack hook",
     "slug": "desk_backpack_hook",
@@ -526,13 +526,13 @@
       "walls": "3 perimeters (6mm members print near-solid)",
       "infill": "30% gyroid",
       "supports": "none",
-      "orientation": "lay flat on one 25.4mm Y-face; 己/Z profile stands vertical => 0% overhangs; add 5mm brim"
+      "orientation": "lay flat on one 25.4mm Y-face; \u5df1/Z profile stands vertical => 0% overhangs; add 5mm brim"
     },
     "key_decisions": [
       "Minor refinement of v3: stop-tab height 10 -> 7.5mm (3/4) for a lower catch. All other geometry identical to v3; still one continuous shell (Solids==1, watertight)."
     ],
     "lessons_learned": [
-      "Tab height is independent of overall model height here — the tab top (z = wall_t + tab_h = 13.5mm) sits well below the top arm (74.75mm), so shrinking it does not change the bounding box."
+      "Tab height is independent of overall model height here \u2014 the tab top (z = wall_t + tab_h = 13.5mm) sits well below the top arm (74.75mm), so shrinking it does not change the bounding box."
     ]
   },
   {
@@ -580,6 +580,110 @@
       "A bump sphere placed on a revolve's apex breaks watertightness because the sphere primitive's tessellation pole coincides with the revolve axis pole. Rotate the bump sphere 90deg (cq.Solid.makeSphere(r).rotate((0,0,0),(1,0,0),90)) to move its mesh pole off-axis; sink it slightly for a transversal merge.",
       "shell() (BRep_API: command not done) and two-independent-spline outer/inner profiles (splines diverge and pinch the wall into multiple solids) both fail for a bulb-on-column. Reliable path: clean primitives -> union -> fillet junction -> boolean-cut a cavity built from matching primitives.",
       "Fillet the cone/ellipsoid neck by selecting just the intersection circle with a BoxSelector at z = ellipsoid_center - ellipsoid_semi_v (where the cone side exits the ellipsoid surface)."
+    ]
+  },
+  {
+    "timestamp": "2026-06-19T15:00:00Z",
+    "object": "clipper blade organizer (v1b: 2x7 grid, flat, tilted slots, thin walls)",
+    "material": "PLA",
+    "printer": "Prusa XL / MK4S",
+    "dimensions_known": {
+      "std_blade_mm": [
+        51,
+        51,
+        17
+      ],
+      "wide_blade_mm": [
+        70,
+        51,
+        17
+      ],
+      "reference_3mf_mm": [
+        108,
+        105,
+        26
+      ],
+      "grid": "2 col x 7 row",
+      "slot_tilt_deg": 8,
+      "wall_mm": 2.0,
+      "bbox_mm": [114, 162, 24]
+    },
+    "slug": "clipper_blade_organizer",
+    "version": "v1b",
+    "stl": "outputs/clipper_blade_organizer/v1b/clipper_organizer_grid.stl",
+    "preview": "outputs/clipper_blade_organizer/v1b/clipper_organizer_grid_preview.png",
+    "watertight": true,
+    "verdict": "APPROVED",
+    "print_settings": {
+      "material": "PLA",
+      "layer_height": "0.2 mm",
+      "walls": "2 (matches 2.0mm modeled wall)",
+      "infill": "15% gyroid",
+      "supports": "no -- 8deg slots are well within printable overhang",
+      "orientation": "flat on bed"
+    },
+    "key_decisions": [
+      "2 columns x 7 rows = 14 cells; 2 boxes = 28 blades (15-30 range)",
+      "THIN walls: wall/divider 3.0/2.5 -> 2.0/2.0, base 4 -> 2.5 (much less material)",
+      "Slots are CUT at an 8deg tilt (not faked in the preview) so a real blade reclines and its stamp angles toward the viewer; previous v1b cut vertical pockets and only leaned the proxy blades",
+      "Scalloped WAVE top matching the reference: one wide cylinder per COLUMN (axis along Y, R from target dip+chord) dips every divider + front/back wall AT EACH CELL CENTRE, leaving peaks at the spine and outer walls. Replaces the earlier flat front lip + lowered spine, which read as a junk lip and a centre gap (both removed).",
+      "114x162x24mm; two side-by-side (240mm) fit the drawer; depth set to 24mm per user (deeper cradle, still under the 26mm reference)",
+      "Approved by an INDEPENDENT cad-reviewer agent at 20mm (rendered big, verified the wave/walls/tilt on the actual mesh); its only reservation was shallow depth, resolved by the user choosing 24mm."
+    ],
+    "lessons_learned": [
+      "A repeating scallop/wave is a dip PER CELL: cut a cylinder ACROSS the dividers at each cell centre (axis spanning the depth). A single cylinder ALONG a divider only lowers it uniformly -> no wave (this exact bug shipped and the user caught it). R = (chord^2/4 + dip^2)/(2*dip), centre Z = wall_h + (R - dip).",
+      "If a part is meant to hold something at a tilt, CUT the slot at that tilt -- don't lean only the preview proxy. Use blade_proxy() oversized as the CUTTER (same recline as the seated blade) so slot and part match.",
+      "Render BIG (single subject, reference side-by-side via review_render.py) and have an INDEPENDENT reviewer judge it before presenting -- the 4-panel thumbnails are too small once downscaled, which is how a missing scallop slipped past a green numeric gate."
+    ]
+  },
+  {
+    "timestamp": "2026-06-19T00:24:24Z",
+    "object": "clipper blade organizer (v1a: 2x5 grid, stackable)",
+    "material": "PLA",
+    "printer": "Prusa XL (287mm deep; too deep for MK4S)",
+    "dimensions_known": {
+      "std_blade_mm": [
+        51,
+        51,
+        17
+      ],
+      "wide_blade_mm": [
+        70,
+        51,
+        17
+      ],
+      "reference_3mf_mm": [
+        108,
+        105,
+        26
+      ],
+      "grid": "2 col x 5 row"
+    },
+    "slug": "clipper_blade_organizer",
+    "version": "v1a",
+    "stl": "outputs/clipper_blade_organizer/v1a/clipper_organizer_stackable.stl",
+    "preview": "outputs/clipper_blade_organizer/v1a/clipper_organizer_stackable_preview.png",
+    "watertight": true,
+    "verdict": "APPROVED (gate green)",
+    "print_settings": {
+      "material": "PLA",
+      "layer_height": "0.2 mm",
+      "walls": "3",
+      "infill": "15% gyroid",
+      "supports": "no",
+      "orientation": "lay on BACK so reclined slots are near-vertical -> no supports"
+    },
+    "key_decisions": [
+      "Same 2x5 = 10-blade grid; blades reclined 27deg above horizontal -> blade top 3.5mm below rim -> stacks 2-high; stack=93.6mm fits 101.6mm drawer",
+      "2-column layout keeps all 10 blades despite reclining (recline spreads rows only)",
+      "WIDE-blade reliefs: central divider is a low 12mm rib + left/right walls dropped to 30mm over the blade lanes so wide heads overhang inward AND outward; front/back walls + 4 corner posts stay full height",
+      "Registration: 4 SOLID corner posts carry the nubs + blind holes (user likes the nubs); fixes prior floating-nub bug",
+      "Constraint: don't seat wide blades back-to-back in the same row of both columns (heads meet at centre) -> stagger wides"
+    ],
+    "lessons_learned": [
+      "Reclining for stack height spreads the row axis only; a 2-column grid preserves capacity",
+      "Wide blades overhang ~8mm each side of a standard cell -> need relief BOTH at the central divider and the outer walls, not just one",
+      "Registration nubs must sit on solid posts, not a thin perimeter rim, or they float over the cavity"
     ]
   }
 ]

@@ -67,6 +67,27 @@ behavior natively using your tools (Read, Edit, Bash) rather than calling the AP
 
 ---
 
+## Modify, don't rebuild
+When the user asks to **modify / extend / shrink / thin / tilt / tweak** an
+existing model, EDIT the existing `model.py` surgically — change the named
+parameters or add one feature block, and leave everything else byte-for-byte.
+Do **not** regenerate the script from scratch: a rewrite silently drops working
+features and reintroduces solved bugs (this is how a liked v1b lost its scallop
+and gained a junk front lip). Rebuild from scratch only for a genuinely new object,
+or when the user explicitly asks for one.
+
+## The Board (design = lead → designer → reviewer)
+Every model is reviewed by an **independent `cad-reviewer` agent before the user
+sees it** — the builder is biased to declare success. The lead (you) holds the
+intent and decides; spawn a separate `cad-designer` agent for new objects / major
+redesigns, but for a small *modify* edit the lead designs and still runs the
+reviewer. The full loop and the `review_render.py` helper live in
+`skills/design-review.md` §0. **Honesty rule:** never describe a feature as present
+unless you or the reviewer can point to it in the actual render — "gate green" ≠
+"looks right"; if you can't verify it, say so.
+
+---
+
 ## The Workflow
 
 ### Step 1 — Intent Gathering
@@ -220,7 +241,12 @@ writing or continuing the CadQuery script. Never approximate or invent a shape t
 should come from a sourced reference.
 
 ### Step 4 — Design Review
-Read `skills/design-review.md`. The review is **assertion-first**: the numeric gate runs before any qualitative judgement.
+Read `skills/design-review.md` (start with §0, **The Board**). The review is
+**assertion-first** (numeric gate) **and** independently reviewed: after the gate,
+render big with `review_render.py` and spawn the **`cad-reviewer` agent** to judge
+the actual render against the reference + intent before you present anything. The
+gate and watertightness are the entry ticket to review, not a pass. Apply the
+**honesty rule** — claim a feature only if it's visible in the render.
 
 1. **Numeric gate (must pass to approve).** If you ran Step 3 with `--spec`, the gate is already in the JSON (`gate.passed`) and the preview footer. To re-check without rebuilding:
    ```bash

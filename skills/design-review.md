@@ -1,11 +1,60 @@
 # Design Review & Iteration Guide
 
 ## Table of Contents
+0. **The Board** — lead → designer → independent reviewer loop (read this first)
 1. Preview-Analyze-Iterate Workflow
 2. Visual Inspection Checklist
 3. Dimensional Verification
 4. Printability Analysis
 5. Common Issues and Fixes
+
+---
+
+## 0. The Board (how review actually runs)
+
+We design as a **board of three roles**, because the person who built the model is
+biased to declare it done. This separation is what catches "looks-fine-but-wrong"
+before the user ever sees it.
+
+- **Lead / orchestrator** (you, the main session): holds the intent (the spec +
+  what the user actually asked for this turn), runs the loop, and makes the final
+  call. The lead never ships on its own say-so.
+- **Designer**: writes/edits the CadQuery. For a brand-new object or a major
+  redesign, spawn a **separate `cad-designer` agent** so the geometry gets full
+  focus. For a small *modify* edit (a param change, one feature), the lead does
+  the edit directly — spawning a cold agent to change one number is wasteful.
+- **Reviewer**: a **separate `cad-reviewer` agent**, every time, before the user
+  sees anything. Fresh eyes that judge the rendered image against the reference
+  and the intent — explicitly NOT the numeric gate. It loops its findings back to
+  the lead.
+
+### The loop (mandatory before presenting)
+1. **Build** — run the model with `--preview` (and `--spec` when the spec's
+   `critical_measurements` apply). Watertight + gate green is the *entry ticket*
+   to review, not a pass.
+2. **Render BIG** — the multi-view thumbnails are too small to judge aesthetics
+   once downscaled (this is literally how a missing scallop / fake tilt / weird
+   lip shipped). Use the single-subject helper, and pass a reference when one
+   exists so the reviewer can diff shape-to-shape:
+   ```bash
+   .venv/bin/python3 review_render.py outputs/<slug>/v<N>/<name>.stl \
+     --ref <reference.stl-or-3mf> --ref-scale <1.0, or 25.4 for an inch-authored 3mf> \
+     --out /tmp/review_<slug>.png
+   ```
+3. **Independent review** — spawn the `cad-reviewer` agent (see
+   `.claude/agents/cad-reviewer.md`). Give it the model path, the reference path,
+   and the intent (the features the design MUST have). It renders, *looks*, and
+   returns a feature-by-feature **VISIBLE / MISSING / WRONG** table plus
+   `VERDICT: APPROVE | NEEDS_REVISION`.
+4. **Lead decides** — on NEEDS_REVISION, the lead fixes (or hands the findings to
+   the designer) and re-enters at step 1. Cap at ~3 passes; if still off, show the
+   user the defect honestly rather than declaring success.
+5. **Present** — only after APPROVE. And the **honesty rule**: never describe a
+   feature as present unless you (or the reviewer) can point to it in the render.
+   "Gate green" ≠ "looks right." If you cannot verify something from the render,
+   say so — do not assert it.
+
+This governs Step 4 of the main workflow in CLAUDE.md.
 
 ---
 

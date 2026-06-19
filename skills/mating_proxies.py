@@ -118,6 +118,56 @@ def phone_proxy(width_mm, height_mm, thickness_mm, tilt_deg,
     return slab, (round(c.x, 2), round(c.y, 2), round(c.z, 2))
 
 
+def blade_proxy(width_mm, height_mm, thickness_mm, recline_deg=0.0,
+                center=(0.0, 0.0), base_z_mm=0.0):
+    """A clipper-blade proxy slab, teeth-up, optionally reclined.
+
+    Canonical pose (recline_deg=0): a rectangular slab with
+      thickness  along X  (the row / pitch axis -- blades file edge-to-edge),
+      width      along Y  (cutting width / slot-length axis; wide blades = bigger),
+      height     along Z  (the teeth-up vertical dimension).
+    `recline_deg` leans the blade backward about the X axis (0 = bolt upright).
+    The slab is dropped so its lowest vertex sits at `base_z_mm` and it is
+    centered at (cx, cy). Returns (solid, info) with info['blade_top_z'] -- the
+    key number for blade_below_rim / stacking clearance.
+    """
+    if cq is None:
+        raise RuntimeError("cadquery not available")
+    cx, cy = center
+    slab = (
+        cq.Workplane("XY")
+        .box(thickness_mm, width_mm, height_mm, centered=(True, True, False))
+    )
+    if recline_deg:
+        slab = slab.rotate((0, 0, 0), (1, 0, 0), -recline_deg)
+    zmin = slab.val().BoundingBox().zmin
+    slab = slab.translate((cx, cy, base_z_mm - zmin))
+    bb = slab.val().BoundingBox()
+    info = {"blade_top_z": round(bb.zmax, 2), "blade_bottom_z": round(bb.zmin, 2)}
+    return slab, info
+
+
+def drawer_proxy(width_mm, depth_mm, height_mm, wall_mm=2.0,
+                 center=(0.0, 0.0), z0_mm=0.0):
+    """An open-top drawer shell (floor + 4 thin walls) for fitment context.
+
+    Models the *interior* envelope the finished part has to live in, so the
+    preview answers "does it actually fit the drawer?". width=X, depth=Y,
+    height=Z. Returns (solid, info)."""
+    if cq is None:
+        raise RuntimeError("cadquery not available")
+    outer = (cq.Workplane("XY").workplane(offset=z0_mm).center(*center)
+             .box(width_mm, depth_mm, height_mm, centered=(True, True, False)))
+    inner = (cq.Workplane("XY").workplane(offset=z0_mm + wall_mm).center(*center)
+             .box(width_mm - 2 * wall_mm, depth_mm - 2 * wall_mm,
+                  height_mm + 2.0, centered=(True, True, False)))
+    shell = outer.cut(inner)  # inner taller than outer -> open top
+    info = {"drawer_interior_mm": [round(width_mm - 2 * wall_mm, 1),
+                                   round(depth_mm - 2 * wall_mm, 1),
+                                   round(height_mm, 1)]}
+    return shell, info
+
+
 def export_proxy(solid, model_stl_path):
     """Write a proxy solid next to the model STL as <name>__proxy.stl.
 
