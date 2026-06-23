@@ -41,7 +41,7 @@ def _make_grid_floor(tm):
     extents = tm.extents
     z_floor = tm.bounds[0][2]
 
-    size = max(extents[:2]) * 2.8
+    size = max(extents[:2]) * 1.6
     spacing = max(extents[:2]) / 7.0
     line_w = size * 0.004
     n_half = max(3, min(15, int(size / (2 * spacing))))
@@ -69,18 +69,52 @@ def _make_grid_floor(tm):
     return trimesh.util.concatenate(pieces)
 
 
-def _render_panel(tm, eye_dir, up, w, h, floor_mesh=None, proxy_mesh=None):
+def _render_panel(tm, eye_dir, up, w, h, floor_mesh=None, proxy_mesh=None, yfov=None, margin=0.15):
     """Render one view. eye_dir is a direction vector (need not be normalized).
 
     Framing spans both the part and the proxy so a mating part that rises above
     the part (e.g. a bowl rim) is never clipped.
+
+    Distance is computed from the projected bounding radius perpendicular to the
+    view direction, so flat models (e.g. trays) are framed tightly regardless of
+    their depth dimension.
     """
     frame = [tm] + ([proxy_mesh] if proxy_mesh is not None else [])
     mins = np.min([m.bounds[0] for m in frame], axis=0)
     maxs = np.max([m.bounds[1] for m in frame], axis=0)
     center = (mins + maxs) / 2.0
-    dist = max(maxs - mins) * 1.75
-    eye = center + (np.asarray(eye_dir, dtype=float) / np.linalg.norm(eye_dir)) * dist
+
+    # Compute projected bounding extents along the view's horizontal and vertical axes.
+    n = np.asarray(eye_dir, dtype=float)
+    n /= np.linalg.norm(n)
+    up_w = np.asarray(up, dtype=float)
+    right_dir = np.cross(up_w, n)
+    if np.linalg.norm(right_dir) < 1e-6:
+        up_w = np.array([0.0, 1.0, 0.0])
+        right_dir = np.cross(up_w, n)
+    right_dir /= np.linalg.norm(right_dir)
+    view_up = np.cross(n, right_dir)
+    view_up /= np.linalg.norm(view_up)
+
+    half = (maxs - mins) / 2.0
+    max_h = max_v = 0.0
+    for sx in (-1, 1):
+        for sy in (-1, 1):
+            for sz in (-1, 1):
+                c = np.array([sx * half[0], sy * half[1], sz * half[2]])
+                max_h = max(max_h, abs(float(np.dot(c, right_dir))))
+                max_v = max(max_v, abs(float(np.dot(c, view_up))))
+
+    fov = yfov or np.pi / 4
+    aspect = w / h
+    half_h_fov = np.arctan(np.tan(fov / 2) * aspect)
+    half_v_fov = fov / 2
+    dist = max(
+        max_h / np.tan(half_h_fov),
+        max_v / np.tan(half_v_fov),
+    ) * (1.0 + margin)
+
+    eye = center + n * dist
 
     scene = pyrender.Scene(ambient_light=_AMBIENT, bg_color=_BG)
     mat = pyrender.MetallicRoughnessMaterial(
@@ -88,7 +122,9 @@ def _render_panel(tm, eye_dir, up, w, h, floor_mesh=None, proxy_mesh=None):
         metallicFactor=0.0,
         roughnessFactor=0.45,
     )
-    scene.add(pyrender.Mesh.from_trimesh(tm, smooth=False, material=mat))
+    tm_clean = tm.copy()
+    tm_clean.visual = trimesh.visual.ColorVisuals()
+    scene.add(pyrender.Mesh.from_trimesh(tm_clean, smooth=False, material=mat))
 
     if proxy_mesh is not None:
         proxy_mat = pyrender.MetallicRoughnessMaterial(
@@ -107,7 +143,7 @@ def _render_panel(tm, eye_dir, up, w, h, floor_mesh=None, proxy_mesh=None):
         scene.add(pyrender.DirectionalLight(color=np.ones(3), intensity=intensity),
                   pose=_look_at(lp, center, up))
 
-    scene.add(pyrender.PerspectiveCamera(yfov=np.pi / 4, aspectRatio=w / h),
+    scene.add(pyrender.PerspectiveCamera(yfov=yfov or np.pi / 4, aspectRatio=w / h),
               pose=_look_at(eye, center, up))
 
     r = pyrender.OffscreenRenderer(w, h)
@@ -131,24 +167,24 @@ def render_multi_view(tm, output_path, title=None, proxy_mesh=None,
     shows actual vs target with PASS/FAIL marks; otherwise it falls back to the
     raw measured values.
     """
-    floor_mesh = _make_grid_floor(tm)
-
     views = [
-        ("Isometric",  [1.0,  1.0, 0.85], [0, 0, 1]),
-        ("Front (Y-)", [0.0, -1.0, 0.35], [0, 0, 1]),
-        ("Right (X+)", [1.0,  0.0, 0.35], [0, 0, 1]),
-        ("Top (Z+)",   [0.0, 0.001, 1.0], [0, 1, 0]),
+        ("Front",       [0.0, -1.0, 0.40], [0, 0, 1]),  # primary: front, moderate elevation
+        ("3/4 View",    [0.8, -1.0, 0.60], [0, 0, 1]),  # front-right corner
+        ("Right (X+)",  [1.0,  0.0, 0.30], [0, 0, 1]),
+        ("Top (Z+)",    [0.0, 0.001, 1.0], [0, 1, 0]),
     ]
 
     iso_label, iso_eye, iso_up = views[0]
     iso_panel = _render_panel(tm, iso_eye, iso_up, _ISO_W, _GRID_H,
-                              floor_mesh=floor_mesh, proxy_mesh=proxy_mesh)
+                              floor_mesh=None, proxy_mesh=proxy_mesh,
+                              yfov=np.pi / 3, margin=0.06)
     _label(iso_panel, iso_label)
 
     side_panels = []
     for label, eye, up in views[1:]:
         p = _render_panel(tm, eye, up, _SIDE_W, _SIDE_H,
-                          floor_mesh=floor_mesh, proxy_mesh=proxy_mesh)
+                          floor_mesh=None, proxy_mesh=proxy_mesh,
+                          yfov=np.pi / 3, margin=0.08)
         _label(p, label)
         side_panels.append(p)
 

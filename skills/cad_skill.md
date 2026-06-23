@@ -280,6 +280,44 @@ Present the brief and wait for user confirmation before writing any CadQuery. If
 - Add units in comments (always mm)
 - Group related parameters with blank lines and section comments
 
+### Profile-Driven Modeling (extrude the blueprint, don't re-box it)
+For any part whose function is defined by a **side or section profile** — hooks,
+brackets, clips, rails, over-edge clamps, stands — build the body by **extruding the
+confirmed profile**, never by unioning a pile of independent boxes. Boxes are how a
+shape silently drifts from the sketch and grows a broken/disconnected topology (the
+ㄹ hook that shipped as a broken "J").
+
+- Define the profile **once** as an ordered centerline polyline + wall thickness in a
+  shared `outputs/<slug>/v<N>/profile.py`. The Step-2.5 blueprint (`skills/profile_blueprint.py`)
+  draws it; `model.py` **imports the same module** and extrudes it. One source of truth ⇒
+  the rendered side view equals the signed-off blueprint by construction.
+- Build the solid from the centerline + thickness, e.g.:
+  ```python
+  import profile as P                          # the shared v<N>/profile.py
+  from profile_blueprint import ribbon_quads   # centerline -> filled quads
+  body = None
+  for q in ribbon_quads(P.CENTERLINE, P.THICKNESS):   # q = 4 (x,z) points
+      seg = (cq.Workplane("XZ").polyline([tuple(pt) for pt in q]).close()
+               .extrude(P.WIDTH))
+      body = seg if body is None else body.union(seg)
+  ```
+  (Or sweep an offset of the polyline.) Then add only true local features — an angled
+  lip face, fillets, a strap pocket — as edits **on top of** the extruded profile.
+- Never hand-type a duplicate of the profile numbers in `model.py`; import them.
+- **Extrude ONE wire, then fillet.** Build the solid from `profile_blueprint.ribbon_outline(...)`
+  (a single mitered closed polygon) — `cq.Workplane("XZ").polyline(outline).close().extrude(width)`
+  — not from a union of overlapping boxes. A single body has clean outer edges, so
+  `result.clean().edges("|Y").fillet(r)` succeeds. A blanket fillet over an overlapping-union
+  ribbon throws `Standard_Failure` on the internal seams (the v1 crash).
+
+### Fix, don't drop
+If a finishing call fails (a fillet, a chamfer, a shell), **fix it — do not silently delete the
+feature and ship the raw part.** The edge_backpack_hook v1 shipped with no fillets because the
+fillet threw and I removed it instead of fixing the cause; the result looked like raw stacked
+blocks. The fix is almost always the operation's precondition (`.clean()` first, a single body,
+a smaller radius, or selecting a safe edge subset), not abandoning the feature. A dropped finish
+feature is a NEEDS_REVISION, same as a missing functional one.
+
 ### Print-Friendly Defaults
 Key FDM design defaults:
 

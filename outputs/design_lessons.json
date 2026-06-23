@@ -1,63 +1,98 @@
 {
-  "_note": "Pattern-keyed lessons. Each entry is the current best knowledge — merge new learnings in, edit out superseded guidance. Do not append version-by-version. 'first_seen' is traceability only.",
-
-  "chamfer_before_boolean_cut": {
-    "applies_when": "Any model where outer edges need chamfering AND interior bores or cuts will be made after",
-    "lesson": "Chamfer outer edges on solid primitives BEFORE any boolean cut operations. After a stepped-bore or interior cut, face('<Z').edges() selects both the outer base ring and the inner bore lip, causing OCC failure. The fix is sequencing, not selector magic — chamfer first, cut second.",
-    "first_seen": "dog_food_bowl_riser/v1"
-  },
-
-  "friction_fit_skirt_lid": {
-    "applies_when": "Box lids, snap-fit enclosures, stackable tiers with male-peg bottom",
-    "lesson": "Lid = top plate (WALL_T thick, same outer footprint as base) + hollow skirt tube (outer = base_inner - 2×tolerance, wall = WALL_T, depth = lid_h - wall_t). Build skirt as boolean subtraction (solid outer minus solid inner), not shell. Skirt outer fillet MUST mirror the base inner corner radius: SKIRT_R = max(0.1, INNER_R - TOLERANCE). A conservatively small fillet (e.g. 1 mm when the cavity corner is 3 mm) makes skirt corners more rectangular than the cavity, causing corner interference at print time. 0.2 mm tolerance each side works for PLA on Prusa MK4S. Skirt inner cut uses a plain box — no fillet needed on the inner cut. For stackable tiers, the same skirt on the bottom of each tier is the male peg that seats into the tier below; reuse identical tolerance and fillet values.",
-    "first_seen": "rounded_corner_box/v2"
-  },
-
-  "curved_surface_engraving": {
-    "applies_when": "Any decorative engraving, logo, or inset polygon on a curved wall (frustum, cylinder, dome)",
-    "lesson": "A flat extruded polygon intersecting a curved surface produces only a crescent-shaped sliver where the flat solid meets the curve — not a clean engraving. Always place decorative engravings on flat planar surfaces (interior floor, flat rim, flat panel face). If the design demands a curved-surface decoration, project the path onto the surface using a swept cut rather than a straight extrude.",
-    "first_seen": "dog_water_bowl/v4"
-  },
-
-  "multi_section_riser": {
-    "applies_when": "Pedestals, risers, and vertical structures with multiple OD sections (pedestal + transition + socket/collar)",
-    "lesson": "Build as separate outer solid primitives (cylinder, loft, ring), union them, then cut all hollow bores in one pass. Use loft() only for frustum transition sections. Transition angle must be ≥45° from horizontal (arctan(height / radial_step) ≥ 45°) to print without supports. Anti-tip flare: a solid frustum wider at the base (fully self-supporting — each layer is narrower going up) lowers the centre of gravity with zero overhang risk; deduct flare height from pedestal height to preserve total model height.",
-    "first_seen": "dog_food_bowl_riser/v3"
-  },
-
-  "iphone_stand_magsafe": {
-    "applies_when": "Any iPhone stand, dock, or holder with a MagSafe recess",
-    "lesson": "Panel geometry: the spine/panel should be approximately phone-width (≥72 mm for iPhone 17). The MagSafe socket is a RECESS cut into the front face — not a protruding cap or disc. RECESS DEPTH must be ≤ the puck thickness so the puck face sits FLUSH or slightly PROUD of the spine front; a recess deeper than the puck (e.g. 7 mm recess for a 5.6 mm puck) sinks the puck below the surface and the magnets pull across an air gap — the phone will not hold or charge. Target recess_depth ≈ puck_thickness − 0.6 mm (e.g. 5.0 mm for a 5.6 mm puck) so the puck protrudes ~0.6 mm and the phone back contacts it directly. Tilt should be subtle (10–15°), not aggressive (35°+). MagSafe center height: derive as base_h + phone_height/2 (the geometric center of the phone back, where the Apple logo sits). For iPhone 17 standard (149.6 mm): magsafe_z = base_h + 75 mm. Do not use a hardcoded low value — placing the socket in the bottom third of the phone means it will miss the magnet array entirely. Spine length check: spine top must exceed magsafe_z + socket_radius × cos(tilt) + 5 mm margin; for the above values at 15° tilt, spine_len ≥ 115 mm. The cable tunnel (computed relative to magsafe_z) moves automatically when magsafe_z changes — no separate adjustment needed. Aesthetics: base_w = spine_w gives a unified flush silhouette. Edge softening: apply fillet(1mm) to |Z (vertical corners) then >Z (top edges) BEFORE the MagSafe/cable cuts — these two pass cleanly. Do NOT fillet the tilted spine outline edges (DirectionSelector on the spine normal vector) — that fillet consistently breaks watertightness at any radius on this geometry.",
-    "first_seen": "iphone17_vertical_stand/v8"
-  },
-
-  "desk_edge_gravity_hook": {
-    "applies_when": "Any gravity-lock hook that clamps over a desk/shelf edge to hang a load (backpack, bag, headphones)",
-    "lesson": "Profile is a folded ribbon (己/Z), NOT two arms in the same direction (v1/v2 got this wrong). One bar of uniform thickness folded six times: top arm (rests on desk top, extends BACK toward interior = counterbalance) -> mouth wall (down over the desk edge) -> mid lip (under desk) -> spine (drops on the interior side) -> cradle (extends FORWARD toward/past the desk edge; load rests here) -> upturned stop tab. The cradle and top arm extend OPPOSITE directions; the load forward of the edge plus the counterbalance arm back over the desk is what creates the gravity lock. Make the mid lip the SAME length as the top arm so the desk is clamped over its full span (a short mid lip leaves the top arm cantilevered and the part looks/sits unstable). Build as overlapping Y-extruded boxes (every fold must volumetrically OVERLAP its neighbour, not just touch) and assert solids()==1 + watertight + Euler==2 to guarantee 'one continuous piece'. Print on its side (lay a lateral Y-face on the bed): the constant XZ cross-section becomes a vertical extrusion = 0 overhangs, no supports, and bending stress in the cradle runs along the layers. Wall thickness: the cradle is the only real load path; 6 mm uniform gives SF ~1.4 for a normal bag (8 mm is overbuilt). Fillet: on a member filleted on both parallel edges of a face, max radius is just under half the face width — 3 mm fails on a 6 mm wall, use 2 mm. CRITICAL: when the user provides a side-view sketch, it OVERRIDES earlier text assumptions about arm direction — trace the fold from the sketch before coding.",
-    "first_seen": "desk_backpack_hook/v3"
-  },
-
-  "bumps_on_hollow_revolved_shell": {
-    "applies_when": "Decorative hemispheres/rivets/studs on a hollow revolved body (dome, ovoid, vase, water-tower head), and any sphere placed on a body's apex",
-    "lesson": "Three traps when adding sphere bumps to a hollow shell. (1) Union the bumps to the SOLID body BEFORE hollowing, then cut the cavity once through everything; unioning bumps AFTER the cavity cut, or letting the cut graze the sphere's edge, makes the boolean tangent and produces degenerate non-watertight slivers. (2) Seat each equator/side bump CENTER a few mm INSIDE the cavity wall (e.g. center_r = outer_r - wall - 2) so the cavity surface passes through solid sphere meat, not the sphere's rim. Trade-off: deeper seat = cleaner cut but less protrusion. (3) A bump on the apex of a revolved solid breaks watertightness because the sphere primitive's tessellation pole coincides with the revolve axis pole — rotate the bump sphere 90deg (cq.Solid.makeSphere(r).rotate((0,0,0),(1,0,0),90)) to move its mesh pole off-axis, and sink it slightly into the surface for a transversal merge.",
-    "first_seen": "club_motor_housing/v1"
-  },
-
-  "bulb_on_column_construction": {
-    "applies_when": "Mushroom/club/water-tower forms: a bulbous head (sphere/oblate ellipsoid) on a narrower cylindrical or tapered shaft, hollow",
-    "lesson": "Do NOT hollow with shell() (fails 'BRep_API: command not done' on this geometry) and do NOT build the shell from two independent outer/inner splines (the splines diverge between control points, pinch the wall, and the cut yields multiple disconnected solids). Reliable recipe: build clean primitives — cone/cylinder for the shaft (cq.Solid.makeCone(r_base, r_top, h)) and an oblate ellipsoid for the head (revolve a dense parametric half-ellipse: pts = [(a*sin(pi*i/n), cz+b*cos(pi*i/n)) for i in 1..n-1], n>=48, no overshoot) — UNION them with deep overlap, fillet the neck (select the intersection circle via BoxSelector at z = head_center_z - head_semi_v), chamfer the base rim, then boolean-CUT a cavity made of matching inner primitives (inner ellipsoid + bore cylinder open through the base). For a motor-housing vessel, size the bore = motor_dia + 2*clearance and confirm it exceeds the shaft ID before committing the shaft OD.",
-    "first_seen": "club_motor_housing/v1"
-  },
-
-  "measurement_datum_must_be_explicit": {
-    "applies_when": "Any user-stated measurement with a vague reference point — 'X above the ground', 'X tall', 'from the top', 'sits at X', 'X high'",
-    "lesson": "A bare number is not a spec — 'sits 4 inches above the ground' has no meaning until you pin the FROM point and the TO point. For the dog bowl riser the same phrase could mean the bowl's underside, the food surface, or the rim — three different models, and v1-v5 silently picked 'total height' and shipped the bowl resting at 113.9 mm (4.48 in) instead of 101.6 mm (4.0 in). Rule: never store a vague phrase as the spec value. Convert every such measurement into a critical_measurement {name, from, to, value_mm, tolerance_mm, comparison, source} in intent_spec.json, asking the user when the target point is ambiguous. Also capture interaction_model (drops-in / sits-on / clips-on / screws-on / freestanding) — getting that wrong is a full redesign, not a tweak. These names become the keys the model reports and verify_spec.py gates on, so name them identically.",
-    "first_seen": "dog_food_bowl_riser/v6"
-  },
-
-  "assembled_state_verification_gate": {
-    "applies_when": "Every model — especially anything that cradles, holds, or mates with another object (bowl, phone, connector, lid)",
-    "lesson": "Verify the ASSEMBLY, not the lone part — the part can look perfect and still be functionally wrong. Every model.py must end with a VERIFICATION block that: (1) builds a proxy of the mating part in its functional position using skills/mating_proxies.py (bowl_proxy/phone_proxy/box_proxy/cylinder_proxy) and exports it via mp.export_proxy() to <name>__proxy.stl (the runner keeps *__proxy.stl out of deliverables and renders it translucent so you SEE the bowl in the socket); (2) computes every critical_measurement on the real geometry plus fit clearances; (3) calls mp.emit_measurements({...}) to print the MEASUREMENTS_JSON line using the spec's names; (4) prints a CHECK self-check but does NOT hard-abort, so the assembled preview always renders. The authoritative gate is the build+gate command: `.venv/bin/python3 run_cadquery_model.py <model.py> --preview --strict --spec <intent_spec.json>` — its JSON 'gate.passed' must be true to approve, and the preview footer shows actual/target with PASS/FAIL. Use mp.puck_protrusion (must be > 0, catches the MagSafe air-gap) and combine_cog + cog_within_footprint (tipping) for stands. Batch all known fixes into one revision; never ship a single-parameter nudge while other checks are pending.",
-    "first_seen": "dog_food_bowl_riser/v6"
-  }
+ "_note": "Pattern-keyed lessons. Each entry is the current best knowledge — merge new learnings in, edit out superseded guidance. Do not append version-by-version. 'first_seen' is traceability only.",
+ "chamfer_before_boolean_cut": {
+  "applies_when": "Any model where outer edges need chamfering AND interior bores or cuts will be made after",
+  "lesson": "Chamfer outer edges on solid primitives BEFORE any boolean cut operations. After a stepped-bore or interior cut, face('<Z').edges() selects both the outer base ring and the inner bore lip, causing OCC failure. The fix is sequencing, not selector magic — chamfer first, cut second.",
+  "first_seen": "dog_food_bowl_riser/v1"
+ },
+ "friction_fit_skirt_lid": {
+  "applies_when": "Box lids, snap-fit enclosures, stackable tiers with male-peg bottom",
+  "lesson": "Lid = top plate (WALL_T thick, same outer footprint as base) + hollow skirt tube (outer = base_inner - 2×tolerance, wall = WALL_T, depth = lid_h - wall_t). Build skirt as boolean subtraction (solid outer minus solid inner), not shell. Skirt outer fillet MUST mirror the base inner corner radius: SKIRT_R = max(0.1, INNER_R - TOLERANCE). A conservatively small fillet (e.g. 1 mm when the cavity corner is 3 mm) makes skirt corners more rectangular than the cavity, causing corner interference at print time. 0.2 mm tolerance each side works for PLA on Prusa MK4S. Skirt inner cut uses a plain box — no fillet needed on the inner cut. For stackable tiers, the same skirt on the bottom of each tier is the male peg that seats into the tier below; reuse identical tolerance and fillet values.",
+  "first_seen": "rounded_corner_box/v2"
+ },
+ "curved_surface_engraving": {
+  "applies_when": "Any decorative engraving, logo, or inset polygon on a curved wall (frustum, cylinder, dome)",
+  "lesson": "A flat extruded polygon intersecting a curved surface produces only a crescent-shaped sliver where the flat solid meets the curve — not a clean engraving. Always place decorative engravings on flat planar surfaces (interior floor, flat rim, flat panel face). If the design demands a curved-surface decoration, project the path onto the surface using a swept cut rather than a straight extrude.",
+  "first_seen": "dog_water_bowl/v4"
+ },
+ "multi_section_riser": {
+  "applies_when": "Pedestals, risers, and vertical structures with multiple OD sections (pedestal + transition + socket/collar)",
+  "lesson": "Build as separate outer solid primitives (cylinder, loft, ring), union them, then cut all hollow bores in one pass. Use loft() only for frustum transition sections. Transition angle must be ≥45° from horizontal (arctan(height / radial_step) ≥ 45°) to print without supports. Anti-tip flare: a solid frustum wider at the base (fully self-supporting — each layer is narrower going up) lowers the centre of gravity with zero overhang risk; deduct flare height from pedestal height to preserve total model height.",
+  "first_seen": "dog_food_bowl_riser/v3"
+ },
+ "iphone_stand_magsafe": {
+  "applies_when": "Any iPhone stand, dock, or holder with a MagSafe recess",
+  "lesson": "Panel geometry: the spine/panel should be approximately phone-width (≥72 mm for iPhone 17). The MagSafe socket is a RECESS cut into the front face — not a protruding cap or disc. RECESS DEPTH must be ≤ the puck thickness so the puck face sits FLUSH or slightly PROUD of the spine front; a recess deeper than the puck (e.g. 7 mm recess for a 5.6 mm puck) sinks the puck below the surface and the magnets pull across an air gap — the phone will not hold or charge. Target recess_depth ≈ puck_thickness − 0.6 mm (e.g. 5.0 mm for a 5.6 mm puck) so the puck protrudes ~0.6 mm and the phone back contacts it directly. Tilt should be subtle (10–15°), not aggressive (35°+). MagSafe center height: derive as base_h + phone_height/2 (the geometric center of the phone back, where the Apple logo sits). For iPhone 17 standard (149.6 mm): magsafe_z = base_h + 75 mm. Do not use a hardcoded low value — placing the socket in the bottom third of the phone means it will miss the magnet array entirely. Spine length check: spine top must exceed magsafe_z + socket_radius × cos(tilt) + 5 mm margin; for the above values at 15° tilt, spine_len ≥ 115 mm. The cable tunnel (computed relative to magsafe_z) moves automatically when magsafe_z changes — no separate adjustment needed. Aesthetics: base_w = spine_w gives a unified flush silhouette. Edge softening: apply fillet(1mm) to |Z (vertical corners) then >Z (top edges) BEFORE the MagSafe/cable cuts — these two pass cleanly. Do NOT fillet the tilted spine outline edges (DirectionSelector on the spine normal vector) — that fillet consistently breaks watertightness at any radius on this geometry.",
+  "first_seen": "iphone17_vertical_stand/v8"
+ },
+ "desk_edge_gravity_hook": {
+  "applies_when": "Any gravity-lock hook that clamps over a desk/shelf edge to hang a load (backpack, bag, headphones)",
+  "lesson": "Profile is a folded ribbon (己/Z), NOT two arms in the same direction (v1/v2 got this wrong). One bar of uniform thickness folded six times: top arm (rests on desk top, extends BACK toward interior = counterbalance) -> mouth wall (down over the desk edge) -> mid lip (under desk) -> spine (drops on the interior side) -> cradle (extends FORWARD toward/past the desk edge; load rests here) -> upturned stop tab. The cradle and top arm extend OPPOSITE directions; the load forward of the edge plus the counterbalance arm back over the desk is what creates the gravity lock. Make the mid lip the SAME length as the top arm so the desk is clamped over its full span (a short mid lip leaves the top arm cantilevered and the part looks/sits unstable). Build as overlapping Y-extruded boxes (every fold must volumetrically OVERLAP its neighbour, not just touch) and assert solids()==1 + watertight + Euler==2 to guarantee 'one continuous piece'. Print on its side (lay a lateral Y-face on the bed): the constant XZ cross-section becomes a vertical extrusion = 0 overhangs, no supports, and bending stress in the cradle runs along the layers. Wall thickness: the cradle is the only real load path; 6 mm uniform gives SF ~1.4 for a normal bag (8 mm is overbuilt). Fillet: on a member filleted on both parallel edges of a face, max radius is just under half the face width — 3 mm fails on a 6 mm wall, use 2 mm. CRITICAL: when the user provides a side-view sketch, it OVERRIDES earlier text assumptions about arm direction — trace the fold from the sketch before coding.",
+  "first_seen": "desk_backpack_hook/v3"
+ },
+ "bumps_on_hollow_revolved_shell": {
+  "applies_when": "Decorative hemispheres/rivets/studs on a hollow revolved body (dome, ovoid, vase, water-tower head), and any sphere placed on a body's apex",
+  "lesson": "Three traps when adding sphere bumps to a hollow shell. (1) Union the bumps to the SOLID body BEFORE hollowing, then cut the cavity once through everything; unioning bumps AFTER the cavity cut, or letting the cut graze the sphere's edge, makes the boolean tangent and produces degenerate non-watertight slivers. (2) Seat each equator/side bump CENTER a few mm INSIDE the cavity wall (e.g. center_r = outer_r - wall - 2) so the cavity surface passes through solid sphere meat, not the sphere's rim. Trade-off: deeper seat = cleaner cut but less protrusion. (3) A bump on the apex of a revolved solid breaks watertightness because the sphere primitive's tessellation pole coincides with the revolve axis pole — rotate the bump sphere 90deg (cq.Solid.makeSphere(r).rotate((0,0,0),(1,0,0),90)) to move its mesh pole off-axis, and sink it slightly into the surface for a transversal merge.",
+  "first_seen": "club_motor_housing/v1"
+ },
+ "bulb_on_column_construction": {
+  "applies_when": "Mushroom/club/water-tower forms: a bulbous head (sphere/oblate ellipsoid) on a narrower cylindrical or tapered shaft, hollow",
+  "lesson": "Do NOT hollow with shell() (fails 'BRep_API: command not done' on this geometry) and do NOT build the shell from two independent outer/inner splines (the splines diverge between control points, pinch the wall, and the cut yields multiple disconnected solids). Reliable recipe: build clean primitives — cone/cylinder for the shaft (cq.Solid.makeCone(r_base, r_top, h)) and an oblate ellipsoid for the head (revolve a dense parametric half-ellipse: pts = [(a*sin(pi*i/n), cz+b*cos(pi*i/n)) for i in 1..n-1], n>=48, no overshoot) — UNION them with deep overlap, fillet the neck (select the intersection circle via BoxSelector at z = head_center_z - head_semi_v), chamfer the base rim, then boolean-CUT a cavity made of matching inner primitives (inner ellipsoid + bore cylinder open through the base). For a motor-housing vessel, size the bore = motor_dia + 2*clearance and confirm it exceeds the shaft ID before committing the shaft OD.",
+  "first_seen": "club_motor_housing/v1"
+ },
+ "measurement_datum_must_be_explicit": {
+  "applies_when": "Any user-stated measurement with a vague reference point — 'X above the ground', 'X tall', 'from the top', 'sits at X', 'X high'",
+  "lesson": "A bare number is not a spec — 'sits 4 inches above the ground' has no meaning until you pin the FROM point and the TO point. For the dog bowl riser the same phrase could mean the bowl's underside, the food surface, or the rim — three different models, and v1-v5 silently picked 'total height' and shipped the bowl resting at 113.9 mm (4.48 in) instead of 101.6 mm (4.0 in). Rule: never store a vague phrase as the spec value. Convert every such measurement into a critical_measurement {name, from, to, value_mm, tolerance_mm, comparison, source} in intent_spec.json, asking the user when the target point is ambiguous. Also capture interaction_model (drops-in / sits-on / clips-on / screws-on / freestanding) — getting that wrong is a full redesign, not a tweak. These names become the keys the model reports and verify_spec.py gates on, so name them identically.",
+  "first_seen": "dog_food_bowl_riser/v6"
+ },
+ "assembled_state_verification_gate": {
+  "applies_when": "Every model — especially anything that cradles, holds, or mates with another object (bowl, phone, connector, lid)",
+  "lesson": "Verify the ASSEMBLY, not the lone part — the part can look perfect and still be functionally wrong. Every model.py must end with a VERIFICATION block that: (1) builds a proxy of the mating part in its functional position using skills/mating_proxies.py (bowl_proxy/phone_proxy/box_proxy/cylinder_proxy) and exports it via mp.export_proxy() to <name>__proxy.stl (the runner keeps *__proxy.stl out of deliverables and renders it translucent so you SEE the bowl in the socket); (2) computes every critical_measurement on the real geometry plus fit clearances; (3) calls mp.emit_measurements({...}) to print the MEASUREMENTS_JSON line using the spec's names; (4) prints a CHECK self-check but does NOT hard-abort, so the assembled preview always renders. The authoritative gate is the build+gate command: `.venv/bin/python3 run_cadquery_model.py <model.py> --preview --strict --spec <intent_spec.json>` — its JSON 'gate.passed' must be true to approve, and the preview footer shows actual/target with PASS/FAIL. Use mp.puck_protrusion (must be > 0, catches the MagSafe air-gap) and combine_cog + cog_within_footprint (tipping) for stands. Batch all known fixes into one revision; never ship a single-parameter nudge while other checks are pending.",
+  "first_seen": "dog_food_bowl_riser/v6"
+ },
+ "reclined_storage_pitch_vs_height": {
+  "applies_when": "Stackable/low-profile holders for tall flat items stored teeth-up/upright (clipper blades, cards, tools) under a height cap (e.g. a drawer)",
+  "lesson": "To fit under a height cap, recline items by angle phi from vertical: vertical_extent = H*cos(phi)+T*sin(phi). But reclined parallel slabs of thickness T can't sit closer than pitch = T/cos(phi) -- so reclining spreads the row axis and would cost capacity in a single row. FIX: arrange items in a 2+ COLUMN grid; reclining only spreads the rows (one axis), columns are unaffected, so you keep the full count (e.g. 10 in 2x5) while still fitting the height. Do this math in the Design Brief; gate with stacked_height(max) + blade_below_rim(min).",
+  "first_seen": "clipper_blade_organizer/v1a"
+ },
+ "look_at_the_reference_image": {
+  "applies_when": "User links/has a reference model (Printables/Thingiverse) or photo to copy or improve",
+  "lesson": "A text fetch of a model page does NOT convey layout -- WebFetch's summary said '10 slots' and I built a single row of 10; the actual reference was a 2-col x 5-row grid (only visible in the photo/3mf). ALWAYS get the visual: ask the user for the image, or load their provided STL/3mf (trimesh needs lxml for 3mf) and render it to read the true arrangement BEFORE designing. Layout is concept-level: getting it wrong = full redesign, not a tweak.",
+  "first_seen": "clipper_blade_organizer (single-row v1 thrown away)"
+ },
+ "registration_nubs_need_solid_posts": {
+  "applies_when": "Stackable tiers / lids aligned by nubs/pegs + matching holes",
+  "lesson": "A registration nub/peg must sit on solid material. If you inset it onto a thin perimeter rim (e.g. nub d6 inset 9mm onto a 3mm wall) it lands over the open cavity and prints as a FLOATING cylinder -- the mesh can still report watertight (disjoint closed bodies). Add dedicated solid corner posts (e.g. 10x10mm full height) to carry the nub on top and the blind hole in the base. Sanity check trimesh body_count == 1 to catch detached features the watertight test misses.",
+  "first_seen": "clipper_blade_organizer/v1a"
+ },
+ "cut_the_tilt_dont_fake_it": {
+  "applies_when": "A part is supposed to hold a mating item at an angle (display tilt, recline, lean) and you build a verification/preview proxy of that item",
+  "lesson": "CUT the slot/pocket at the intended tilt in the real geometry -- do not leave a vertical pocket and only recline the preview proxy. A vertical slot makes the real item stand erect even though the render shows it leaning, and the user will (correctly) call it out. Robust method: use the SAME proxy builder (e.g. mating_proxies.blade_proxy), oversized, as the boolean CUTTER with the same recline as the seated proxy, so the slot pose and the mating-part pose are guaranteed identical. An 8deg lean = downhill wall 8deg off vertical -> still supportless.",
+  "first_seen": "clipper_blade_organizer v1b (vertical pockets, blades faked-leaning in preview -> rebuilt with 8deg cut slots)"
+ },
+ "scallop_wave_is_per_cell_dip": {
+  "applies_when": "Reproducing a repeating scalloped/wavy top edge (like a blade holder or organiser divider)",
+  "lesson": "A wave is a dip PER CELL. Cut a cylinder ACROSS the dividers at each cell centre (axis spanning the full depth), so the top edge dips over each cell and peaks at the spine/outer walls. A single cylinder ALONG a divider only lowers it uniformly = NO wave (this exact bug shipped and the user caught it). For a target dip d over chord c: R=(c**2/4+d**2)/(2*d), centre Z = wall_h + (R-d).",
+  "first_seen": "clipper_blade_organizer v1b (flat dividers claimed as scalloped -> fixed with per-column cross cylinders)"
+ },
+ "render_big_and_review_independently": {
+  "applies_when": "Before telling the user a model looks good, especially when matching/improving a reference",
+  "lesson": "The 4-panel preview thumbnails are too small to judge aesthetics once downscaled, and a green numeric gate cannot see ugly -- that combo let a missing scallop + junk front lip ship with a confident summary. Render BIG with review_render.py (single subject, reference side-by-side), then spawn the INDEPENDENT cad-reviewer agent to judge the image vs the reference/intent. Never claim a feature is present unless it is visible in the render.",
+  "first_seen": "clipper_blade_organizer v1b (user: why do you tell me lies / why is there no reviewer loop)"
+ },
+ "extrude_profile_for_side_view_parts": {
+  "applies_when": "Any part whose function is defined by a side/section profile: over-edge hooks, brackets, clips, rails, stands, clamps.",
+  "lesson": "Build the body by EXTRUDING the side profile, never by unioning independent boxes. Boxes let the shape drift from the sketch and produce broken/disconnected topology (a Korean-rieul hook shipped as a broken 'J' with a floating under-lip). Define the profile ONCE as a centerline polyline + thickness in a shared v<N>/profile.py that BOTH the 2D blueprint (skills/profile_blueprint.py) and model.py import; the side view then equals the signed-off blueprint by construction. Add only true local features (angled lip, fillets, pocket) on top of the extruded profile.",
+  "first_seen": "edge_backpack_hook/v1"
+ },
+ "blueprint_prescreen_before_user": {
+  "applies_when": "Step 2.5, before showing the user any side-profile blueprint.",
+  "lesson": "Run validate_profile() (skills/profile_blueprint.py) as an automated pre-screen: ribbon contiguous + single piece, no self-intersection/break, mating part not penetrated. Must be ALL PASS before the user sees the blueprint. It caught a real 3.4mm under-jaw-into-desk penetration on edge_backpack_hook/v1 that the centerline math hid (jaw centerline must be slot_floor - thickness/2, not + thickness/2). A from->to mid-thickness centerline offset error is invisible in numbers but obvious to the collision check.",
+  "first_seen": "edge_backpack_hook/v1"
+ },
+ "intrinsic_quality_gate_not_just_intent": {
+  "applies_when": "Any part the reviewer signs off — especially a clean-room first build with no prior art.",
+  "lesson": "REGRESSION (edge_backpack_hook v1): the autonomous reviewer APPROVED a part that matched intent but was a quality regression vs prior art — bulky (116x40x97 vs 63x25x75 mm), strap hung 40mm past the edge (huge lever), and it had NO fillets because a blanket .edges('|Y').fillet() crashed and I dropped the feature instead of fixing it. Two fixes: (1) judge INTRINSIC quality (skills/print_checks.py: finish/fillets present, lever_ratio<=0.5, economy/compactness, printability) so a high bar holds with NO reference — do not rely on having prior art to catch bulk/finish. (2) Fix-don't-drop: a finishing op that fails (fillet/chamfer/shell) gets fixed (extrude ONE wire via ribbon_outline, .clean() first), never silently removed. Use prior art only as an after-check or a modify input, never as the clean-room build's quality crutch.",
+  "first_seen": "edge_backpack_hook/v1 (regression), fixed for v1 rebuild"
+ }
 }
