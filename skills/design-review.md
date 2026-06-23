@@ -28,10 +28,20 @@ before the user ever sees it.
   and the intent — explicitly NOT the numeric gate. It loops its findings back to
   the lead.
 
-### The loop (mandatory before presenting)
+### The loop (runs autonomously after blueprint sign-off — the reviewer is the gate)
+The user has already signed off the **2D profile blueprint** (CLAUDE.md Step 2.5). From
+here the loop runs **without the user**; the `cad-reviewer`'s `VERDICT: APPROVE` is the
+ship signal. The human is pulled back in only on non-convergence or an intent/topology change.
+
+0. **Entry: blueprint is locked.** The model must have been built by **extruding the
+   signed-off `v<N>/profile.py`**, not re-assembled from boxes — so the side view already
+   matches the blueprint.
 1. **Build** — run the model with `--preview` (and `--spec` when the spec's
    `critical_measurements` apply). Watertight + gate green is the *entry ticket*
-   to review, not a pass.
+   to review, not a pass. Then run the **intrinsic quality gate** `skills/print_checks.py`
+   (printability in the declared orientation, min-wall, **finish/fillets present**,
+   **lever ratio**, **economy**) — these are absolute standards that hold a clean-room
+   first build to a high bar with no prior art. Any FAIL is a NEEDS_REVISION input.
 2. **Render BIG** — the multi-view thumbnails are too small to judge aesthetics
    once downscaled (this is literally how a missing scallop / fake tilt / weird
    lip shipped). Use the single-subject helper, and pass a reference when one
@@ -42,17 +52,26 @@ before the user ever sees it.
      --out /tmp/review_<slug>.png
    ```
 3. **Independent review** — spawn the `cad-reviewer` agent (see
-   `.claude/agents/cad-reviewer.md`). Give it the model path, the reference path,
-   and the intent (the features the design MUST have). It renders, *looks*, and
-   returns a feature-by-feature **VISIBLE / MISSING / WRONG** table plus
-   `VERDICT: APPROVE | NEEDS_REVISION`.
-4. **Lead decides** — on NEEDS_REVISION, the lead fixes (or hands the findings to
-   the designer) and re-enters at step 1. Cap at ~3 passes; if still off, show the
-   user the defect honestly rather than declaring success.
-5. **Present** — only after APPROVE. And the **honesty rule**: never describe a
-   feature as present unless you (or the reviewer) can point to it in the render.
-   "Gate green" ≠ "looks right." If you cannot verify something from the render,
-   say so — do not assert it.
+   `.claude/agents/cad-reviewer.md`). Give it the model path, the **blueprint PNG**, the
+   reference path, the **previous approved version** (on a modify), and the intent (the
+   features the design MUST have). It renders, *looks*, and returns a feature-by-feature
+   **VISIBLE / MISSING / WRONG** table plus:
+   - **profile match** — does the rendered side view match the signed-off blueprint? (catches
+     a topology that drifted from the locked profile);
+   - **regression diff** (modifies only) — compare to the previous approved version; flag any
+     feature silently dropped;
+   - the final `VERDICT: APPROVE | NEEDS_REVISION`.
+4. **Lead fixes autonomously** — on NEEDS_REVISION the lead applies the **full batch** of
+   fixes (or hands the findings to the designer) and re-enters at step 1. **Cap 3 rounds.**
+   Do **not** stop for the user between rounds.
+5. **Converge:**
+   - **APPROVE + gate green + watertight ⇒ deliver + log automatically** (no human stop).
+   - **3 rounds without APPROVE ⇒ escalate** to the user with the honest defect — never fake it.
+   - **Any interaction-model / topology change or new-asset need ⇒ pause for the user**, even
+     mid-loop.
+   And the **honesty rule**: never describe a feature as present unless you (or the reviewer)
+   can point to it in the render. "Gate green" ≠ "looks right." If you cannot verify something
+   from the render, say so — do not assert it.
 
 This governs Step 4 of the main workflow in CLAUDE.md.
 

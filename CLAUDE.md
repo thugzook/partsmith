@@ -33,12 +33,18 @@ outputs/
 
 ## Interaction mode
 
-**Default: interactive.** Pause at every touch point listed in the workflow steps below,
-present your work, and wait for the user's confirmation or feedback before continuing.
+**Default: human bookends, autonomous middle.** Early steps (intent, dimensions/assets) are
+conversational, but there are only **two mandatory human gates**:
+1. **Blueprint sign-off** (Step 2.5) — the user confirms the rendered side-profile blueprint.
+2. **Interaction-model / topology change or new external asset** — always pauses, even mid-loop.
 
-**One-shot / autonomous mode:** Only skip touch points if the user explicitly says so in
-the request (e.g. "run it end-to-end", "don't interrupt me", "do it automatically").
-Even then, present the final preview + verdict before closing out.
+Everything after blueprint sign-off — build, numeric gate, the `cad-reviewer` review loop, and
+final delivery on APPROVE — runs **without stopping for the user**. The reviewer's APPROVE is the
+ship gate; the model auto-delivers and logs. Escalate to the user only on non-convergence (3-round
+cap) or a gate-2 change. This is deliberate: the user asked not to be pulled in at every step.
+
+**Fully one-shot:** if the user says "run it end-to-end" / "don't interrupt me", also auto-confirm
+the blueprint (still render it + confirm the pre-screen is ALL PASS) and present everything at the end.
 
 ## When to run the design workflow
 When the user asks to design, build, make, model, or print a 3D object — or says
@@ -58,6 +64,7 @@ describes **when** to run each step. If the two ever conflict, the skill file wi
 |------|-------------------------------|
 | Intent | `skills/cad_skill.md` (Requirements Gathering) + Step 1 below |
 | Dimensions + Assets | Step 2 below + `skills/cad_skill.md` |
+| Blueprint | `skills/profile_blueprint.py` (docstring = the contract) + Step 2.5 below |
 | Design | `skills/cad_skill.md` (Script Template, Key Rules) + `skills/mating_proxies.py` |
 | Review | `skills/design-review.md` (incl. §0 The Board) |
 | Log | Step 6 below (self-contained) |
@@ -77,14 +84,36 @@ and gained a junk front lip). Rebuild from scratch only for a genuinely new obje
 or when the user explicitly asks for one.
 
 ## The Board (design = lead → designer → reviewer)
-Every model is reviewed by an **independent `cad-reviewer` agent before the user
-sees it** — the builder is biased to declare success. The lead (you) holds the
+Models are reviewed by an **independent `cad-reviewer` agent before the user
+sees them** — the builder is biased to declare success. The lead (you) holds the
 intent and decides; spawn a separate `cad-designer` agent for new objects / major
-redesigns, but for a small *modify* edit the lead designs and still runs the
-reviewer. The full loop and the `review_render.py` helper live in
+redesigns. The full loop and the `review_render.py` helper live in
 `skills/design-review.md` §0. **Honesty rule:** never describe a feature as present
 unless you or the reviewer can point to it in the actual render — "gate green" ≠
 "looks right"; if you can't verify it, say so.
+
+**The reviewer is the gate, not the human.** After blueprint sign-off the build → review →
+fix loop runs autonomously (cap 3 rounds); the `cad-reviewer` `VERDICT: APPROVE` is what ships
+the part. The lead only returns to the user on APPROVE (final delivery) or escalation. The
+reviewer also checks the rendered side view **against the signed-off blueprint**, and on a
+**modify of an existing approved `vN`** diffs the new render + measurements **against the previous
+version** (not just the reference) to catch silently-dropped features (the lost-scallop class).
+
+**Scale review to the change (don't pay for a cold agent on a one-line tweak).**
+The cold `cad-reviewer` agent re-renders from scratch and costs minutes + a fresh
+context window — worth it for a new object or a redesign, wasteful for a parameter
+nudge. So:
+- **Parameter-only modify edit** (changes named constants, *no* new/removed solids
+  or cuts, *no* topology change): the **lead self-reviews** — one comparison render
+  **against the previous approved version** (the regression diff: confirm no feature
+  silently dropped) + the numeric gate — and ships. Do **not** spawn the reviewer.
+  Escalate to the cold reviewer only if the render looks off or you can't verify a claim.
+- **New object, major redesign, or any topology change** (adds/removes a body or a
+  cut, new feature, changed mating interface): spawn the `cad-reviewer` every time.
+- **Before changing any parameter, read its inline comment as a constraint.** If the
+  comment states a geometric dependency (e.g. "margin so the lean clears"), respect
+  it or redesign deliberately — don't zero it and discover the breach in review.
+  (This is the v2 organizer lesson: `edge_margin→0` punched holes in the back wall.)
 
 **Models per role:** orchestrator = Opus (the lead's runtime model — it does the
 judgment + the small modify-edits), designer = Opus (geometry correctness is the
@@ -178,16 +207,11 @@ e.g. panel      | 76 × 16 × 112 mm        | tilted 10° rearward
 e.g. socket     | 55.8 mm dia, 3.5 deep   | cut into panel front face
 ```
 
-**2. ASCII Side-View (or Top-View) Sketch** — a plain-text cross-section showing how components relate spatially:
+**2. Rendered 2D Profile Blueprint** — for any part whose function is defined by a side/section profile (hooks, brackets, clips, rails, stands), draw the **side profile flat** with `skills/profile_blueprint.py` and compare it to the user's sketch. Do **not** use an ASCII cross-section — it is too hard to read and hides broken topology (this is exactly how a ㄹ hook shipped as a broken "J"). Define the profile **once** as a centerline polyline + thickness in a shared `v<N>/profile.py`, then:
+```bash
+.venv/bin/python3 outputs/<slug>/profile_check.py   # renders blueprint + runs the pre-screen
 ```
-   side view
-      ┌───┐
-  ╱   │ ○ │  ← panel, socket = ○
-╱    │   │
-      └─┬─┘
-  ──────────
-     base
-```
+`render_blueprint(...)` draws the ribbon filled with the mating part hatched in place; `validate_profile(...)` runs the **automated pre-screen** (ribbon contiguous + single piece, no self-intersection/break, mating part not penetrated). **The pre-screen must be ALL PASS before the user sees the blueprint** — fix any FAIL first. The same `profile.py` is imported and extruded by `model.py` in Step 3, so the drawn profile and the printed solid cannot diverge. (For parts not defined by a profile, an annotated component layout still applies.)
 
 **3. Functional Fit Math** — a table that works out, *numerically and before any code*, how every `critical_measurement` and mating interface resolves. Each row is `formula → result → target → ✓/✗`. This is the cheapest gate: if the math misses the target here, the design is wrong before a single solid is built. Examples mapping to past failures:
 ```
@@ -200,15 +224,15 @@ tip_margin (CoG)  | cog_x within base footprint          | yes      | inside    
 cable_slot        | connector_w + clearance              | 6.75 mm  | ≥ measured   | ✓
 ```
 
-**4. Assembled-state sketch requirement** — the ASCII sketch in part 2 MUST include the mating part (the bowl, the phone) drawn in place and a datum line at each target height. You are designing the *assembly*, not the lone part. Restate, in one line, where the mating part ends up (e.g. "bowl underside rests at 101.6 mm; rim at ~157 mm").
+**4. Assembled-state requirement** — the blueprint in part 2 MUST include the mating part (the bowl, the phone, the desk) drawn in place (hatched) and a datum line at each target height. You are designing the *assembly*, not the lone part. Restate, in one line, where the mating part ends up (e.g. "bowl underside rests at 101.6 mm; rim at ~157 mm").
 
 **5. Stated Assumptions** — anything not explicitly in the spec that the design will assume (angles, proportions, feature placement).
 
 **6. Open Questions** — flag anything still ambiguous before committing to code.
 
-**Touch point:** Present the brief and **wait for the user to confirm or correct it** before writing any CadQuery. This step is mandatory in interactive mode. Only skip it if the user explicitly requested "end-to-end" or "don't interrupt me" in their original request — even then, include the brief in your output and note it was auto-confirmed.
+**Touch point (BLUEPRINT SIGN-OFF — mandatory human gate #1):** Present the brief **with the rendered blueprint PNG** and **wait for the user to confirm or correct it** before writing any CadQuery. This is the single cheap place to catch a wrong shape/intent, so it stays human even in the otherwise-autonomous flow. Only skip it if the user explicitly requested "end-to-end" or "don't interrupt me" — even then, include the blueprint in your output, confirm the pre-screen is ALL PASS, and note it was auto-confirmed. After this sign-off, Steps 3–4 run autonomously (see Step 4 / The Board).
 
-**Scaffold Preview (optional):** For any model with 3+ components or complex spatial relationships, offer a scaffold script — plain positioned boxes/cylinders, no features or cuts, runs in ~5 seconds. Offer this when the ASCII sketch alone may not be enough to validate layout:
+**Scaffold Preview (optional):** For any model with 3+ components or complex spatial relationships, offer a scaffold script — plain positioned boxes/cylinders, no features or cuts, runs in ~5 seconds. Offer this when the blueprint alone may not be enough to validate a 3D layout:
 ```bash
 .venv/bin/python3 run_cadquery_model.py outputs/<slug>/v<N>/scaffold.py --preview --strict
 ```
@@ -224,6 +248,8 @@ Follow the Script Template and all Key Rules in that file.
 
 Determine the version directory: check existing `vN` folders under `outputs/<slug>/`, use `v(N+1)`. For a new object this is always `v1`.
 
+**Profile-driven parts (extrude the blueprint, don't re-box it):** if Step 2.5 produced a `v<N>/profile.py`, `model.py` **must** import it and build the body by extruding that exact centerline (offset to the wall thickness via `cq ... polyline(...).close().extrude(width)`) — **never** re-assemble the shape from independent boxes. The signed-off blueprint and the printed solid then share one source of truth and the side view cannot drift. (This is the fix for the broken-topology hook.)
+
 1. Write the complete CadQuery script to `outputs/<slug>/v<N>/model.py`. It **must** end with a `# === VERIFICATION ===` block (see the Script Template in `skills/cad_skill.md`) that:
    - builds a proxy of the mating part in its functional position using `skills/mating_proxies.py` (`bowl_proxy`, `phone_proxy`, `box_proxy`, …) and exports it via `mp.export_proxy(...)` to `<name>__proxy.stl`;
    - computes every `critical_measurement` on the real geometry plus fit clearances;
@@ -235,7 +261,7 @@ Determine the version directory: check existing `vN` folders under `outputs/<slu
    ```
    The preview shows the mating part translucent over the model with each measurement's **actual/target + PASS/FAIL** in the footer; the JSON result carries `measurements` and `gate` (`gate.passed` + per-measurement results).
 3. If `success` is false, read `stderr`, fix the geometry, re-run. Repeat until success (a build failure here means invalid geometry, not a wrong dimension — that is caught by the gate in Step 4).
-4. **Touch point:** Show the user the assembled preview and the measured `critical_measurements` (mm + inches). Ask if anything needs to change before running the design review.
+4. **No human stop here** (autonomous flow): once the blueprint is signed off, do not pause for the user after the build — flow straight into the Step 4 review loop. The exception is the mid-design asset rule below and any change to the **interaction model / topology**, which always pauses for the user (mandatory human gate #2).
 
 All dimensions must come from `dimensions_known` — never invent values.
 
@@ -246,13 +272,24 @@ Resolution) for that asset only, and wait for `assets_resolved` to be populated 
 writing or continuing the CadQuery script. Never approximate or invent a shape that
 should come from a sourced reference.
 
-### Step 4 — Design Review
-Read `skills/design-review.md` (start with §0, **The Board**). The review is
-**assertion-first** (numeric gate) **and** independently reviewed: after the gate,
-render big with `review_render.py` and spawn the **`cad-reviewer` agent** to judge
-the actual render against the reference + intent before you present anything. The
-gate and watertightness are the entry ticket to review, not a pass. Apply the
+### Step 4 — Design Review (autonomous AI gate)
+Read `skills/design-review.md` (start with §0, **The Board**). After blueprint sign-off
+this loop runs **without the user** — the `cad-reviewer` agent is the gate, not the
+human. The review is **assertion-first** (numeric gate) **and** independently reviewed:
+after the gate, render big with `review_render.py` and spawn the **`cad-reviewer` agent**
+to judge the actual render against the reference + intent + **the signed-off blueprint**.
+The gate and watertightness are the entry ticket to review, not a pass. Apply the
 **honesty rule** — claim a feature only if it's visible in the render.
+
+**Autonomous loop:** build → numeric gate + watertight → `cad-reviewer` (`VERDICT:
+APPROVE | NEEDS_REVISION`). On NEEDS_REVISION the lead fixes (or hands findings to the
+designer) and re-enters — **cap 3 rounds**. Then:
+- **APPROVE + gate green + watertight ⇒ deliver + log automatically** (Steps 5–6, no
+  human stop).
+- **Still failing after 3 rounds ⇒ escalate to the user** with the honest defect — never
+  fake success.
+- **Any interaction-model / topology change or new-asset need ⇒ pause for the user**
+  (mandatory human gate #2), even mid-loop.
 
 1. **Numeric gate (must pass to approve).** If you ran Step 3 with `--spec`, the gate is already in the JSON (`gate.passed`) and the preview footer. To re-check without rebuilding:
    ```bash
@@ -269,7 +306,7 @@ Fix and re-run if anything fails. Produce a final verdict: APPROVED (gate green 
 
 **Batch-tuning rule (fewer revisions).** Before writing `v(N+1)`, list **all** known issues and fix them in one pass — never ship a single-parameter nudge while other functional checks are still pending (this is what turned the phone stand into 11 versions). Keep "functional must-pass" (the numeric gate) separate from "aesthetic": an aesthetic-only change must still re-pass the full gate before delivery.
 
-**Touch point:** Present the full review (numeric gate table + constraint results + printability + verdict). If NEEDS_REVISION, explain the complete set of changes and get user sign-off before applying fixes.
+**No human stop on NEEDS_REVISION** (autonomous): apply the full batch of fixes and re-run the loop yourself, up to the 3-round cap. The user only sees the review as part of the final delivery (on APPROVE) or on escalation (cap exceeded / intent change). When you do present, give the full review (numeric gate table + constraint results + printability + verdict + a note that the side render matches the blueprint).
 
 ### Step 5 — Deliver
 Report to the user:
@@ -324,6 +361,8 @@ directly. Sub-agents (designer/reviewer) do not log.
 | `skills/cad_skill.md` | CadQuery patterns, rules, Script Template (incl. VERIFICATION block) |
 | `skills/design-review.md` | Visual inspection checklist, printability analysis, assembled-state checks |
 | `skills/mating_proxies.py` | Reusable mating-part proxies (bowl/phone/box) + fit helpers + `emit_measurements` |
+| `skills/profile_blueprint.py` | Side-profile blueprint renderer + `validate_profile` pre-screen (Step 2.5 gate) |
+| `outputs/<slug>/v<N>/profile.py` | Profile centerline + thickness — shared source of truth, drawn by the blueprint and extruded by `model.py` |
 | `run_cadquery_model.py` | Runs a CadQuery script, returns JSON result (incl. parsed `measurements`) |
 | `verify_spec.py` | Numeric gate: PASS/FAIL of measured values vs spec `critical_measurements` |
 | `preview.py` | Renders multi-view previews (mating part translucent, measurements in footer) |

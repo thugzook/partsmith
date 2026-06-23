@@ -606,7 +606,11 @@
       "grid": "2 col x 7 row",
       "slot_tilt_deg": 8,
       "wall_mm": 2.0,
-      "bbox_mm": [114, 162, 24]
+      "bbox_mm": [
+        114,
+        162,
+        24
+      ]
     },
     "slug": "clipper_blade_organizer",
     "version": "v1b",
@@ -684,6 +688,147 @@
       "Reclining for stack height spreads the row axis only; a 2-column grid preserves capacity",
       "Wide blades overhang ~8mm each side of a standard cell -> need relief BOTH at the central divider and the outer walls, not just one",
       "Registration nubs must sit on solid posts, not a thin perimeter rim, or they float over the cavity"
+    ]
+  },
+  {
+    "timestamp": "2026-06-20T18:56:22Z",
+    "object": "clipper blade organizer (v3: 2x5 flat grid, prototype 2)",
+    "material": "PLA",
+    "printer": "Prusa MK4S / XL (flat, no supports)",
+    "dimensions_known": {
+      "std_blade_mm": [
+        51,
+        51,
+        17
+      ],
+      "wide_blade_mm": [
+        70,
+        51,
+        17
+      ],
+      "grid": "2 col x 5 row",
+      "tilt_deg": 6,
+      "wall_h_mm": 27
+    },
+    "slug": "clipper_blade_organizer",
+    "version": "v3",
+    "stl": "outputs/clipper_blade_organizer/v3/clipper_organizer_grid.stl",
+    "preview": "outputs/clipper_blade_organizer/v3/clipper_organizer_grid_preview.png",
+    "watertight": true,
+    "verdict": "APPROVED (lead self-review, parameter-only modify edit; flat-grid build clean, watertight). Gate's stacked_height/blade_below_rim are stale stackable-concept measurements, N/A to this flat grid.",
+    "print_settings": {
+      "material": "PLA",
+      "layer_height": "0.2 mm",
+      "walls": "4 (~1.6mm; bump to fully fill the 2mm walls)",
+      "infill": "15% gyroid",
+      "supports": "no",
+      "orientation": "flat on bed, base down (6deg slot walls are within overhang)"
+    },
+    "key_decisions": [
+      "Prototype 2: shrank 2x7->2x5 (14->10 cells) for ~28% less material / faster print; matches the reference layout and fits the drawer two-wide (240x112mm).",
+      "Reduced slot tilt 8->6deg (user request); side benefit: front-wall tilt wedge shrank from ~4.2mm to ~2.8mm and back-wall breach risk dropped further.",
+      "Raised wall_h 24->25mm: pocket 21.5->24.5mm (~48% blade capture) for a bit more stability with the more-upright blades.",
+      "Kept the v2 back-wall interior clamp (cutter.intersect(interior)) so the lean can't breach the 2mm perimeter walls.",
+      "Scaled review to the change: parameter-only edit => lead self-review (render+gate+contains() wall probes), no cold cad-reviewer."
+    ],
+    "lessons_learned": [
+      "Reducing slot tilt reduces the unavoidable front-wall wedge (material behind the lean): 8deg->~4.2mm, 6deg->~2.8mm at the base.",
+      "A captured pocket (>=~43% of blade height, low side clearance) won't let a teeth-up blade tip out even with CoM above the rim; it only rocks ~\u00b18deg before the slot walls arrest it.",
+      "rtree must be installed for trimesh contains()/signed_distance; without it wall-solidity probes silently fall back to flaky section-counting."
+    ]
+  },
+  {
+    "timestamp": "2026-06-22T02:36:13Z",
+    "object": "over-the-edge backpack hook (clean-room)",
+    "material": "PETG",
+    "printer": "FDM, 0.4 mm nozzle (assumed)",
+    "dimensions_known": {
+      "slot_opening_mm": 35.6,
+      "wall_mm": 6.0,
+      "overlap_mm": 38,
+      "drop_mm": 26,
+      "shelf_x_mm": 14,
+      "width_mm": 28,
+      "fillet_mm": 2.0
+    },
+    "slug": "edge_backpack_hook",
+    "version": "v1",
+    "stl": "outputs/edge_backpack_hook/v1/edge_backpack_hook.stl",
+    "preview": "outputs/edge_backpack_hook/v1/edge_backpack_hook_preview.png",
+    "watertight": true,
+    "verdict": "APPROVED",
+    "print_settings": {
+      "material": "PETG",
+      "layer_height": "0.2 mm",
+      "walls": "6 mm ribbon, 2 mm filleted corners",
+      "infill": "40-60% (load-bearing)",
+      "supports": "none",
+      "orientation": "standing on a 28x67.6 mm Y-end face; all walls vertical, no supports"
+    },
+    "key_decisions": [
+      "Rebuilt clean-room (no v4 peeking) after v1 regressed (bulky, no fillets, 40mm lever).",
+      "Compact proportions derived from FUNCTION: strap near edge (14mm), reaction arm 38mm (lever 0.37), width 28mm.",
+      "Built by extruding ONE mitered outline (ribbon_outline) -> single body -> .clean()+2mm fillet works (fix-don't-drop)."
+    ],
+    "lessons_learned": [
+      "Intrinsic quality gate (print_checks) + fix-don't-drop produced a GREAT part first build: blueprint pre-screen, numeric gate, print_checks, reviewer all passed on iteration 1.",
+      "Held to a high bar with NO reference; after-the-fact it matched v4 (58.8x28x67.6 vs 63.5x25.4x74.8mm) which had needed 4 versions + human sketch fixes.",
+      "Overhang metric must exclude bed-contact faces or it false-flags a profile prism's footprint."
+    ],
+    "bbox_mm": [
+      58.8,
+      28.0,
+      67.6
+    ],
+    "volume_mm3": 36965
+  },
+  {
+    "timestamp": "2026-06-22T03:43:06Z",
+    "object": "over-the-edge backpack hook",
+    "material": "PETG",
+    "printer": "FDM 0.4mm (assumed)",
+    "slug": "edge_backpack_hook",
+    "version": "v2",
+    "bbox_mm": [
+      61.1,
+      24.0,
+      73.6
+    ],
+    "volume_mm3": 21354,
+    "stl": "outputs/edge_backpack_hook/v2/edge_backpack_hook.stl",
+    "preview": "outputs/edge_backpack_hook/v2/edge_backpack_hook_preview.png",
+    "watertight": true,
+    "verdict": "APPROVED (lead self-review: parameter-only modify, no topology change)",
+    "dimensions_known": {
+      "slot_mm": 35.6,
+      "wall_mm": 4.0,
+      "width_mm": 24.0,
+      "overlap_mm": 38,
+      "drop_mm": 34,
+      "shelf_x_mm": 18,
+      "lip_rise_mm": 6.13,
+      "fillet_mm": 1.0,
+      "lip_style": "triangular wedge (flat front, ramp inside)",
+      "lip_h_mm": 6.0,
+      "lip_ramp_mm": 7.0
+    },
+    "print_settings": {
+      "material": "PETG",
+      "layer_height": "0.2 mm",
+      "walls": "4 mm ribbon, 1.0 mm filleted corners",
+      "infill": "raise as needed for load (volume already low)",
+      "supports": "none",
+      "orientation": "standing on a 24x73.6 mm Y-end face; all walls vertical"
+    },
+    "key_decisions": [
+      "v2 modify of v1 (no override): shorter lip (rise 12.7->6.1mm), bigger strap cradle (drop 26->34, throat ~14->~26mm; reach 14->18), less bulky (wall 6->4, width 28->24). Slot unchanged 35.6mm.",
+      "Volume -41% (36965->21637mm3); user will raise infill instead of wall thickness for strength.",
+      "Fix-don't-drop: fillet 1.5 made the 4mm-wall mesh non-watertight at the tight mouth/lip corners; reduced to 1.0mm (clean, still rounded) rather than dropping fillets.",
+      "Lip reshaped (override) from a thin leaning hook to a SUBTLE solid triangular wedge: flat vertical outer face flush with the shelf front, short inner ramp (~41 deg) so the strap rides up a smooth catch -- matches the user's sketch. Built as a unioned wedge on the ribbon (true local feature), not a ribbon segment."
+    ],
+    "lessons_learned": [
+      "On thin (4mm) walls a fillet >= ~wall/3 can collide at tight corners and break watertightness; pick the largest radius that stays manifold, don't drop the feature.",
+      "Parameter-only modify -> lead self-review (preview + gate + print_checks + v1->v2 regression diff), no cold reviewer, per Board scale-the-review rule."
     ]
   }
 ]

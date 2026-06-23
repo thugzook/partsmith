@@ -22,6 +22,12 @@ features you have not verified.
 - the object's `intent_spec.json` — never invent dimensions; use `dimensions_known`.
 
 ## Build rules
+- **Profile-driven parts: extrude the signed-off blueprint, never re-box it.** If the
+  object has a `v<N>/profile.py` (a side/section profile — hooks, brackets, clips, rails,
+  stands), import it and build the body by extruding that exact centerline (`ribbon_quads`
+  from `skills/profile_blueprint.py`, or a swept offset), then add only true local features
+  on top. Do **not** re-create the shape from independent boxes — that is how the side view
+  drifts from the sketch and the topology breaks. Import the profile numbers; never retype them.
 - Parameters first, named, at the top. No magic numbers in the geometry.
 - End with the VERIFICATION block: build the proxy, compute every
   `critical_measurement` on the real geometry, call `mp.emit_measurements({...})`,
